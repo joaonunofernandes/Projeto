@@ -1,99 +1,177 @@
 body {
-  /*Calculadora aparece centrada na página*/
-  font-family: Arial, sans-serif; /*Usa a fonte Arial*/
-  background-color: #f0f0f0; /*Fundo cinza claro*/
-  display: flex; /*Alinhar ao centro*/
-  justify-content: center; /*Centrar horizontalmente*/
-  align-items: center; /*Centrar verticalmente*/
-  height: 100vh; /*Body ocupa 100% da altura da janela*/
-  margin: 0; /*Remove margens padrão do body*/
+  /* Calculadora aparece centrada na página */
+  font-family: Arial, sans-serif; /* Usa a fonte Arial */
+  background-color: #f0f0f0; /* Fundo cinza claro */
+  display: flex; /* Alinhar ao centro */
+  justify-content: center; /* Centrar horizontalmente */
+  align-items: center; /* Centrar verticalmente */
+  height: 100vh; /* Body ocupa 100% da altura da janela */
+  margin: 0; /* Remove margens padrão do body */
 }
 
-.reais_imaginarios {
-  /*Destaque à calculadora*/
-  width: 100%; /*Ajuste ao ecrã*/
-  max-width: 600px; /*Tamanho máximo de 600px*/
-  background-color: #333; /*Fundo cinza escuro*/
-  padding: 30px; /*Adiciona espaço interno para afastar conteúdo das bordas*/
-  border-radius: 15px; /*Bordas arredondadas*/
-  box-shadow: 0px 0px 15px 0px #000; /*Sombra preta à volta*/
-  text-align: center; /*Centraliza o contéudo dentro da calculadora*/
+.calculator {
+  /* Destaque à calculadora */
+  width: 100%; /* Ajuste ao ecrã */
+  max-width: 600px; /* Tamanho máximo de 600px */
+  background-color: #333; /* Fundo cinza escuro */
+  padding: 30px; /* Adiciona espaço interno para afastar conteúdo das bordas */
+  border-radius: 15px; /* Bordas arredondadas */
+  box-shadow: 0px 0px 15px 0px #000; /* Sombra preta à volta */
+  text-align: center; /* Centraliza o contéudo dentro da calculadora */
+  position: relative; /* Para posicionamento absoluto de elementos filhos */
 }
 
 h1 {
-  /*Destaque do título sobre o fundo escuro*/
-  color: #fff; /*Texto branco*/
-  margin-bottom: 30px; /*Mais espaço abaixo do título*/
-  font-size: 38px; /*Tamanho do texto ligeiramente maior*/
-  font-weight: 600; /*Um pouco mais negrito*/
-  letter-spacing: 1.5px; /*Espaçamento entre letras*/
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /*Sombra sutil*/
-  position: relative; /*Para o after funcionar*/
-  padding: 15px 25px; /*Espaço interno da caixa*/
-  background-color: #666; /*Fundo cinza*/
-  border-radius: 8px; /*Bordas arredondadas*/
-  display: inline-block; /*Para a caixa se ajustar ao conteúdo*/
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /*Sombra para destacar a caixa*/
-  border: 2px solid #666; /*Borda levemente mais clara*/
+  /* Destaque do título sobre o fundo escuro */
+  color: #fff; /* Texto branco */
+  margin-bottom: 30px; /* Mais espaço abaixo do título */
+  font-size: 38px; /* Tamanho do texto ligeiramente maior */
+  font-weight: 600; /* Um pouco mais negrito */
+  letter-spacing: 1.5px; /* Espaçamento entre letras */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Sombra sutil */
+  position: relative; /* Para o after funcionar */
+  padding: 15px 25px; /* Espaço interno da caixa */
+  background-color: #666; /* Fundo cinza */
+  border-radius: 8px; /* Bordas arredondadas */
+  display: inline-block; /* Para a caixa se ajustar ao conteúdo */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra para destacar a caixa */
+  border: 2px solid #666; /* Borda levemente mais clara */
 }
 
 
 #display {
-  /*Aspeto do display*/
-  width: 100%; /*Ocupa toda a largura disponível*/
-  height: 80px; /*Altura*/
-  font-size: 36px; /*Texto grande para facilitar a leitura*/
-  text-align: right; /*Texto alinhado à direita*/
-  padding: 15px; /*Adiciona espaço interno para não encostar às bordas*/
-  margin-bottom: 20px; /*Cria espaço entre display e botões*/
-  border-radius: 10px; /*Bordas arredondadas*/
-  border: none; /*Remove a borda padrão*/
-  background-color: #222; /*Fundo cinza escuro*/
-  color: #fff; /*Texto branco*/
-  box-sizing: border-box; /*Garante que padding não afeta a largura total*/
-  overflow: hidden; /*Previne que o conteúdo ultrapasse as bordas*/
+  /* Aspeto do display */
+  width: 100%; /* Ocupa toda a largura disponível */
+  height: 80px; /* Altura */
+  font-size: 36px; /* Texto grande para facilitar a leitura */
+  text-align: right; /* Texto alinhado à direita */
+  padding: 15px; /* Adiciona espaço interno para não encostar às bordas */
+  margin-bottom: 20px; /* Cria espaço entre display e botões */
+  border-radius: 10px; /* Bordas arredondadas */
+  border: none; /* Remove a borda padrão */
+  background-color: #222; /* Fundo cinza escuro */
+  color: #fff; /* Texto branco */
+  box-sizing: border-box; /* Garante que padding não afeta a largura total */
+  overflow: hidden; /* Previne que o conteúdo ultrapasse as bordas */
 }
 
 .buttons {
-  /*Botões organizados em linhas e colunas*/
-  display: grid; /*Usa css grid para organizar os botões*/
-  grid-template-columns: repeat(4,1fr); /*Divide os botões em 4 colunas iguais*/
-  gap: 15px; /*Adiciona espaço entre os botões*/
+  /* Botões organizados em linhas e colunas */
+  display: grid; /* Usa css grid para organizar os botões */
+  grid-template-columns: repeat(4,1fr); /* Divide os botões em 4 colunas iguais */
+  /* fr é uma unidade de medida especial no CSS Grid que significa "fração". */
+  /* 1fr = uma parte igual do espaço disponível */
+  /* repeat(4, 1fr) = cria 4 colunas, cada uma com largura igual */
+  gap: 15px; /* Adiciona espaço entre os botões */
 }
 
 .btn {
-  /*Aspeto dos botões*/
-  width: 100%; /*Ocupam 100% da largura disponível*/
-  padding: 30px; /*Botões maiores*/
-  font-size: 24px; /*Texto grande*/
-  border: none; /*Remove bordas padrão*/
-  border-radius: 10px; /*Bordas arredondadas*/
-  background-color: #666; /*Cor cinza*/
-  color: #fff; /*Texto branco*/
-  cursor: pointer; /*Cursor muda para uma mão quando passamos por cima*/
-  transition: background-color 0.2s; /*Suaviza a mudança de cor quando passamos por cima*/
+  /* Aspeto dos botões */
+  width: 100%; /* Ocupam 100% da largura disponível */
+  padding: 30px; /* Botões maiores */
+  font-size: 24px; /* Texto grande */
+  border: none; /* Remove bordas padrão */
+  border-radius: 10px; /* Bordas arredondadas */
+  background-color: #666; /* Cor cinza */
+  color: #fff; /* Texto branco */
+  cursor: pointer; /* Cursor muda para uma mão quando passamos por cima */
+  transition: background-color 0.2s; /* Suaviza a mudança de cor quando passamos por cima */
 }
 
 .btn:hover {
-  background-color: #555; /*Quando passamos o rato os botões ficam ligeiramente mais escuros*/
+  background-color: #555; /* Quando passamos o rato os botões ficam ligeiramente mais escuros */
 }
 
 .operator {
-  /*Os botões de operações (+,-,x,%) têm cor laranja*/
+  /* Os botões de operações (+,-,x,%) têm cor laranja */
   background-color: #ff9500;
 }
 
 .operator:hover {
-  /*Quando passamos o rato, escurece ligeiramente*/
+  /* Quando passamos o rato, escurece ligeiramente */
   background-color: #e68a00;
 }
 
 .btn:active {
-  /*Quando clicamos fica ainda mais escuro*/
+  /* Quando clicamos fica ainda mais escuro */
   background-color: #444;
 }
 
 .operator:active {
-  /*Quando clicamos fica ainda mais escuro*/
+  /* Quando clicamos fica ainda mais escuro */
   background-color: #cc7a00;
+}
+
+.special {
+  background-color: #9d4edd; /* Cor roxa para os botões especiais */
+}
+
+.special:hover {
+  background-color: #7b2cbf; /* Tom mais escuro ao passar o rato */
+}
+
+.special:active {
+  background-color: #5a189a; /* Ainda mais escuro ao clicar */
+}
+
+.dropdown {
+  position: absolute;
+  top: 15px;
+  left: 30px;
+  display: inline-block;
+  z-index: 10;
+}
+
+.dropbtn {
+  background-color: #ff9500; /* Laranja para combinar com os operadores */
+  color: white;
+  padding: 8px 12px; /* Botão */
+  font-size: 14px; /* Fonte */
+  border: none;
+  border-radius: 6px; /* Bordas */
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra */
+  transition: background-color 0.2s;
+  font-weight: bold; /* Texto em negrito para melhor leitura */
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #444; /* Cinza escuro para combinar com a calculadora */
+  min-width: 140px; /* Menu mais estreito */
+  box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.3); /* Sombra menor */
+  z-index: 11;
+  border-radius: 6px; /* Bordas menos arredondadas */
+  overflow: hidden;
+  margin-top: 4px; /* Menor espaço entre botão e menu */
+  border: 1px solid #555; /* Borda sutil para definir melhor os limites */
+}
+
+.dropdown-content a {
+  color: white;
+  padding: 8px 12px; /* Itens de menu menores */
+  text-decoration: none;
+  display: block;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #555;
+  font-size: 14px; /* Fonte menor */
+}
+
+.dropdown-content a:last-child {
+  border-bottom: none;
+}
+
+.dropdown-content.show {
+  display: block;
+}
+
+
+.dropdown-content a:hover {
+  background-color: #555; /* Cinza mais claro ao passar o rato */
+}
+
+
+.dropdown:hover .dropbtn {
+  background-color: #e68a00; /* Mesmo hover dos operadores */
 }

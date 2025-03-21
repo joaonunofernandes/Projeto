@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Linguagem Principal: inglês -->
+<head>
+    <meta charset="UTF-8">
+    <!-- Permite carateres especiais -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Garante que a página se adapta a diferentes tamanhos de ecrã -->
+    <title>Coquaternion Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="calculator">
+        <div class="dropdown" id="mainDropdown">
+            <button class="dropbtn" id="dropdownButton">☰ Menu</button>
+                <div class="dropdown-content" id="dropdownContent">
+                    <a href="/">Reais e Imaginários</a>
+                    <a href="/quaternions">Quaterniões</a>
+                    <a href="/coquaternions">Coquaterniões</a>
+                </div>
+            </div>
+    <!-- Cria uma classe que contém os coquaterniões -->
+    <h1>Calculadora de Coquaterniões</h1>
+        <form method="POST">
+        <!-- Cria um formulário que envia os dados ao servidor quando o utilizador pressiona = -->
+        <input type="text" name="expression" id="display" value="{{ result }}" readonly>
+        <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
+        <div class="buttons">
+        <!-- Números -->
+        <!-- Agrupa os botões da calculadora -->
+        <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
+        <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
+        <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
+        <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
+
+        <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
+        <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
+        <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
+        <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
+
+        <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
+        <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
+        <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
+        <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
+
+        <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
+        <button type="button" class="btn operator" onclick="clearDisplay()">C</button>
+        <button type="button" class ="btn operator" onclick="appendToDisplay('.')">.</button>
+        <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
+        
+        <!-- Botões específicos para coquaterniões -->
+        <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
+        <button type="button" class="btn special" onclick="appendToDisplay('j')">j</button>
+        <button type="button" class="btn special" onclick="appendToDisplay('k')">k</button>
+        <button type="submit" class="btn operator">=</button>
+
+        </div>
+        </form>
+    </div>
+
+
+<!-- appendToDisplay : Adiciona um número ou operador ao campo de input (display) -->
+<!-- clearDisplay :Apaga todo o conteúdo do campo de input (display) -->
+<script>
+    function appendToDisplay(value) {
+        const display = document.getElementById('display');
+        display.value += value;
+    }
+
+    function clearDisplay() {
+        document.getElementById('display').value = '';
+    }
+
+    // Adicionar controlo do dropdown usando javascript
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownButton = document.getElementById('dropdownButton');
+        const dropdownContent = document.getElementById('dropdownContent');
+        const dropdown = document.getElementById('mainDropdown');
+        
+    // Toggle dropdown ao clicar no botão
+    dropdownButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdownContent.classList.toggle('show');
+    });
+        
+    // Fechar dropdown quando clicar fora dele
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target)) {
+            dropdownContent.classList.remove('show');
+        }
+    });
+});
+</script>
+</body>
+</html>

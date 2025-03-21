@@ -31,6 +31,33 @@ def calculatormain():
     return render_template("calculator.html", result=result)
     # Carrega o ficheiro calculator.html e passa o resultado do cálculo
 
+@app.route("/quaternions", methods=["GET", "POST"])
+def quaternions():
+    result = ""
+    if request.method == "POST":
+        try:
+            expression = request.form["expression"]
+            result = eval(expression)
+        except:
+            result = "Erro"
+            
+    return render_template("quaternion.html", result=result)
+    # Carrega o ficheiro quaternion.html e passa o resultado do cálculo
+
+@app.route("/coquaternions", methods=["GET", "POST"])
+def coquaternions():
+    result = ""
+    if request.method == "POST":
+        try:
+            expression = request.form["expression"]
+            result = eval(expression)
+        except:
+            result = "Erro"
+            
+    return render_template("coquaternion.html", result=result)
+    # Carrega o ficheiro coquaternion.html e passa o resultado do cálculo
+
+
 # Garante que a aplicação só corre se for exectutada diretamente (python app.py)
 if __name__ == "__main__":
     # Ativa o modo de debug

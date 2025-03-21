@@ -1,62 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
-<!Linguagem Principal: inglês>
+<!-- Linguagem Principal: inglês -->
 <head>
     <meta charset="UTF-8">
-    <!Permite carateres especiais>
+    <!-- Permite carateres especiais -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!Garante que a página se adapta a diferentes tamanhos de ecrã>
+    <!-- Garante que a página se adapta a diferentes tamanhos de ecrã -->
     <title>Calculator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     <body>
-        <div class="reais_imaginarios">
-        <!Cria uma classe que contém os numeros reais e imaginarios>
+        <div class="calculator">
+            <div class="dropdown" id="mainDropdown">
+                <button class="dropbtn" id="dropdownButton">☰ Menu</button>
+                    <div class="dropdown-content" id="dropdownContent">
+                        <a href="/">Reais e Imaginários</a>
+                        <a href="/quaternions">Quaterniões</a>
+                        <a href="/coquaternions">Coquaterniões</a>
+                    </div>
+                </div>
+        <!-- Cria uma classe que contém os numeros reais e imaginarios -->
         <h1>Calculadora de Reais e Imaginários</h1>
-            <form method="POST">
-            <!Cria um formulário que envia os dados ao servidor quando o utilizador pressiona =>
+        <form method="POST">
+            <!-- Cria um formulário que envia os dados ao servidor quando o utilizador pressiona = -->
             <input type="text" name="expression" id="display" value="{{ result }}" readonly>
-            <!readondly (o utilizador não escreve diretamente aqui, só através de botões)>
+            <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
             <div class="buttons">
-            <!Agrupa os botões da calculadora>
-            <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
-            <!"button...button" -Tag HTML que cria um elemento botão clicável>
-            <!"type="button"" - Define que é um botão padrão que não submete o formulário automaticamente quando clicado>
-            <!onclick="appendToDisplay('-')" - Define a ação quando o botão é clicado:>
-            <!Chama a função JavaScript appendToDisplay>
-            <!Passa o símbolo "1" como argumento>
-            <!Esta função adiciona o símbolo de subtração ao visor da calculadora>
-            <!"1" - O texto/símbolo que aparece visualmente no botão>
-            <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
-            <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
-            <!"class="btn operator"" - Atribui duas classes CSS>
-            <!btn - Classe geral para todos os botões da calculadora>
-            <!operator - Classe específica para operadores matemáticos (para ter um aspeto diferente)>
-
-            <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
-            <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
-            <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
-
-            <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
-            <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
-            <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
-
-            <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
-            <button type="button" class="btn operator" onclick="clearDisplay()">C</button>
-            <button type="button" class ="btn operator" onclick="appendToDisplay('.')">.</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
-            <button type="submit" class="btn operator">=</button>
-
+            <!-- Agrupa os botões da calculadora -->
+                <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
+                
+                <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
+                <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
+                <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
+                
+                <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
+                <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
+                <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
+                
+                <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
+                <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
+                <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
+                
+                <button type="button" class="btn"></button>
+                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
+                <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
+                <button type="submit" class="btn operator">=</button>
             </div>
             </form>
         </div>
 
 
-<!appendToDisplay : Adiciona um número ou operador ao campo de input (display)>
-<!clearDisplay :Apaga todo o conteúdo do campo de input (display)>
+<!-- appendToDisplay : Adiciona um número ou operador ao campo de input (display) -->
+<!-- clearDisplay :Apaga todo o conteúdo do campo de input (display) -->
 <script>
     function appendToDisplay(value) {
         const display = document.getElementById('display');
@@ -66,6 +67,35 @@
     function clearDisplay() {
         document.getElementById('display').value = '';
     }
+
+    // Adicionar controlo do dropdown usando javascript
+    document.addEventListener('DOMContentLoaded', function() {
+    // document é o objeto que representa toda a página HTML
+    // addEventListener é um método que "escuta" por um evento específico
+    // 'DOMContentLoaded' é o nome do evento que ocorre quando o HTML termina de carregar
+    // A função anônima function() { ... } contém o código que será executado quando o evento ocorrer
+    // Basicamente, esta função garante que o script só executa depois que o documento HTML está completamente carregado
+
+        const dropdownButton = document.getElementById('dropdownButton');
+        const dropdownContent = document.getElementById('dropdownContent');
+        const dropdown = document.getElementById('mainDropdown');
+        
+    // Toggle dropdown ao clicar no botão
+    dropdownButton.addEventListener('click', function(e) {
+        e.preventDefault(); // Impede o comportamento padrão do botão (importante para botões dentro de formulários)
+        e.stopPropagation(); // Impede que o click se propague para os elementos pai
+        dropdownContent.classList.toggle('show'); // Alterna a classe 'show' no elemento do menu
+        // Se a classe 'show' não existir, ela é adicionada (menu aparece)
+        // Se a classe 'show' já existir, ela é removida (menu desaparece)
+    });
+        
+    // Fechar dropdown quando clicar fora dele
+    document.addEventListener('click', function(e) { // Adiciona um detector de eventos de click a toda a página
+        if (!dropdown.contains(e.target)) { // Verifica se o elemento clicado (e.target) NÃO está dentro do dropdown
+            dropdownContent.classList.remove('show'); // Remove a classe 'show', fazendo o menu desaparecer
+        }
+    });
+});
 </script>
 </body>
 </html>
