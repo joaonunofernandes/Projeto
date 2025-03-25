@@ -1,24 +1,30 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, session, redirect
 import re
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import sympify
+import os
 
-# Flask : framework web que permite criar aplicações web em Python
-# render_template : permite carregar páginas HTML dinâmicas
-# request : utilizado para obter dados enviados pelo utilizador (calculadora)
+# O sistema de "session" (ver import) do Flask foi projetado especificamente para este propósito: 
+# manter dados isolados entre diferentes utilizadores enquanto mantém persistência para um mesmo utilizador.
 
 app = Flask(__name__)
-# Cria instâncias do Flask (base da aplicação) 
+app.secret_key = os.urandom(24)  # Chave secreta necessária para a sessão
+# A linha app.secret_key = os.urandom(24) gera uma chave aleatória
+# Esta chave é usada para assinar os cookies, impedindo manipulação
+# Sendo que O Flask cria um cookie único no navegador de cada usuário
+# Este cookie contém um identificador de sessão criptografado
+# Todas as requisições subsequentes do mesmo navegador incluem este cookie
 
-@app.route("/", methods = ["GET", "POST"]) 
-# "/" - serve para indicar que estamos na página inicial, logo até nova route tudo para baixo é o que é feito na main page
-# "methods = ["GET", "POST"]" - Especifica que esta rota pode aceitar requisições HTTP tanto do tipo GET quanto POST
-# "GET" - Usado quando o navegador solicita uma página (carregar a página)
-# "POST" - Usado quando o utilizador envia dados ao servidor (enviar as "contas")
-
+@app.route("/", methods=["GET", "POST"]) 
 def calculatormain():
+    # Inicializar histórico se não existir na sessão
+    if 'history' not in session:
+        session['history'] = []
+        # Os dados em session['history'] são específicos para cada sessão individual
+        # Nenhum utilizador pode aceder dados de outros utilizadores
+        
     result = ""
-    if request.method == "POST": # Se o método for POST significa que o utilizador submeteu um cálculo
+    if request.method == "POST":
         try:
             expression = request.form["expression"]
             
@@ -31,24 +37,25 @@ def calculatormain():
             
             # Formatar resultado com base no tipo
             if computed.is_real:
-                # Verificar se é um número inteiro
-                if computed.is_integer:
-                    result = str(int(computed))  # Formato inteiro sem decimais
+                # Verificar se é um número inteiro ou tem apenas zeros na parte decimal
+                if computed.is_integer or float(computed) == int(float(computed)):
+                    result = str(int(float(computed)))
                 else:
-                    # Sempre 8 casas decimais
+                    # Manter 8 casas decimais para números reais não inteiros
                     result = f"{float(computed):.8f}"
             else:
                 # Formatar parte real e imaginária separadamente
                 real_part = float(computed.as_real_imag()[0])
                 imag_part = float(computed.as_real_imag()[1])
                 
-                # Verificar se cada parte é inteira
-                if real_part.is_integer():
+                # Verificar se a parte real é inteira
+                if real_part == int(real_part):
                     real_str = str(int(real_part))
                 else:
                     real_str = f"{real_part:.8f}"
                     
-                if imag_part.is_integer():
+                # Verificar se a parte imaginária é inteira
+                if imag_part == int(imag_part):
                     imag_str = str(int(imag_part))
                 else:
                     imag_str = f"{imag_part:.8f}"
@@ -57,49 +64,88 @@ def calculatormain():
                 if imag_part >= 0:
                     result = f"{real_str} + {imag_str}j"
                 else:
-                    # Se a parte imaginária for negativa, o sinal já estará incluído
                     result = f"{real_str} {imag_str}j"
-                    
+            
+            # Adicionar ao histórico (formato: expressão = resultado)
+            history_entry = {'expression': expression, 'result': result}
+            # Adicionar ao início para ter os mais recentes primeiro
+            history = session['history']
+            history.insert(0, history_entry)
+            # Manter apenas os 20 últimos cálculos
+            if len(history) > 20:
+                history = history[:20]
+            session['history'] = history
+            
         except Exception as e:
             result = f"Erro: {str(e)}"
-            
 
-    return render_template("calculator.html", result=result)
-    # Carrega o ficheiro calculator.html e passa o resultado do cálculo
+    # Passar histórico para o template
+    history = session.get('history', [])
+    return render_template("calculator.html", result=result, history=history)
+
 
 @app.route("/quaternions", methods=["GET", "POST"])
 def quaternions():
+    if 'quaternion_history' not in session:
+        session['quaternion_history'] = []
+        
     result = ""
     if request.method == "POST":
         try:
             expression = request.form["expression"]
-            result = eval(expression)
-        except:
-            result = "Erro"
+            result = eval(expression)  # Cuidado com eval() em ambiente de produção!
             
-    return render_template("quaternion.html", result=result)
-    # Carrega o ficheiro quaternion.html e passa o resultado do cálculo
+            # Adicionar ao histórico
+            history_entry = {'expression': expression, 'result': str(result)}
+            history = session['quaternion_history']
+            history.insert(0, history_entry)
+            if len(history) > 20:
+                history = history[:20]
+            session['quaternion_history'] = history
+            
+        except Exception as e:
+            result = f"Erro: {str(e)}"
+            
+    history = session.get('quaternion_history', [])
+    return render_template("quaternion.html", result=result, history=history)
 
 @app.route("/coquaternions", methods=["GET", "POST"])
 def coquaternions():
+    if 'coquaternion_history' not in session:
+        session['coquaternion_history'] = []
+        
     result = ""
     if request.method == "POST":
         try:
             expression = request.form["expression"]
-            result = eval(expression)
-        except:
-            result = "Erro"
+            result = eval(expression)  # Cuidado com eval() em ambiente de produção!
             
-    return render_template("coquaternion.html", result=result)
-    # Carrega o ficheiro coquaternion.html e passa o resultado do cálculo
+            # Adicionar ao histórico
+            history_entry = {'expression': expression, 'result': str(result)}
+            history = session['coquaternion_history']
+            history.insert(0, history_entry)
+            if len(history) > 20:
+                history = history[:20]
+            session['coquaternion_history'] = history
+            
+        except Exception as e:
+            result = f"Erro: {str(e)}"
+            
+    history = session.get('coquaternion_history', [])
+    return render_template("coquaternion.html", result=result, history=history)
 
+# Adicionar rota para limpar histórico
+@app.route("/clear_history/<calculator_type>")
+def clear_history(calculator_type):
+    if calculator_type == 'standard':
+        session['history'] = []
+    elif calculator_type == 'quaternion':
+        session['quaternion_history'] = []
+    elif calculator_type == 'coquaternion':
+        session['coquaternion_history'] = []
+    return redirect(request.referrer or '/')
 
-# Garante que a aplicação só corre se for exectutada diretamente (python app.py)
 if __name__ == "__main__":
-    # Ativa o modo de debug
     app.run(debug=True)
 
-#Tratar das casa decimais, se tiver apenas 0, aparecer o numero inteiro/a unidade, senão 8 casas decimais
-#Imaginários muda para complexos
-#Adicionar backspace
-#Adicionar função de mover o cursor (quer via rato, quer via setinhas na calculadora)
+# Perguntar se os professores querem que seja possivel utilizar a calculadora com o teclado

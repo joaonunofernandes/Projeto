@@ -6,96 +6,95 @@
     <!-- Permite carateres especiais -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Garante que a página se adapta a diferentes tamanhos de ecrã -->
-    <title>Calculator</title>
+    <title>Real and Complex Calculator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Incluir o arquivo JavaScript externo -->
+    <script src="{{ url_for('static', filename='calculator.js') }}"></script>
     </head>
     <body>
         <div class="calculator">
             <div class="dropdown" id="mainDropdown">
                 <button class="dropbtn" id="dropdownButton">☰ Menu</button>
                     <div class="dropdown-content" id="dropdownContent">
-                        <a href="/">Reais e Imaginários</a>
+                        <a href="/">Reais e Complexos</a>
                         <a href="/quaternions">Quaterniões</a>
                         <a href="/coquaternions">Coquaterniões</a>
                     </div>
                 </div>
-        <!-- Cria uma classe que contém os numeros reais e imaginarios -->
-        <h1>Calculadora de Reais e Imaginários</h1>
+        <!-- Botão de histórico -->
+        <div class="history-btn">
+            <button type="button" class="btn-history" id="historyButton">
+                <span>📋</span> Histórico
+            </button>
+        </div>
+        
+        <!-- Painel de histórico -->
+        <div class="history-panel" id="historyPanel">
+            <div class="history-header">
+                <h3>Histórico de Cálculos</h3>
+                <button class="history-close" id="closeHistoryBtn">&times;</button>
+            </div>
+            <div class="history-items">
+                {% if history %}
+                    {% for item in history %}
+                    <div class="history-item" onclick="useHistoryItem('{{ item.expression }}', '{{ item.result }}')">
+                        <div class="history-expression">{{ item.expression }}</div>
+                        <div class="history-result">= {{ item.result }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="history-empty">Sem histórico de cálculos</div>
+                {% endif %}
+            </div>
+            <div class="history-footer">
+                <a href="{{ url_for('clear_history', calculator_type='standard') }}" class="clear-history">Limpar Histórico</a>
+            </div>
+        </div>
+        <!-- Cria uma classe que contém os numeros reais e complexos -->
+        <h1>Calculadora de Reais e Complexos</h1>
         <form method="POST">
             <!-- Cria um formulário que envia os dados ao servidor quando o utilizador pressiona = -->
             <input type="text" name="expression" id="display" value="{{ result }}" readonly>
             <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
             <div class="buttons">
             <!-- Agrupa os botões da calculadora -->
+                <!-- Primeira linha -->
                 <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
+                <button type="button" class="btn special" onclick="backspaceDisplay()">⌫</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
-                
+    
+                <!-- Segunda linha -->
                 <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
                 <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
                 <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
-                
+                <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
+    
+                <!-- Terceira linha -->
                 <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
                 <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
                 <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
-                
+                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
+    
+                <!-- Quarta linha -->
                 <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
                 <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
                 <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
-                
-                <button type="button" class="btn" onclick="appendToDisplay('pi')">pi</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
+    
+                <!-- Quinta linha (nova) -->
+                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
                 <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
+                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
+    
+                <!-- Sexta linha -->
+                <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
                 <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
                 <button type="submit" class="btn operator">=</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
             </div>
             </form>
         </div>
-
-
-<!-- appendToDisplay : Adiciona um número ou operador ao campo de input (display) -->
-<!-- clearDisplay :Apaga todo o conteúdo do campo de input (display) -->
-<script>
-    function appendToDisplay(value) {
-        const display = document.getElementById('display');
-        display.value += value;
-    }
-
-    function clearDisplay() {
-        document.getElementById('display').value = '';
-    }
-
-    // Adicionar controlo do dropdown usando javascript
-    document.addEventListener('DOMContentLoaded', function() {
-    // document é o objeto que representa toda a página HTML
-    // addEventListener é um método que "escuta" por um evento específico
-    // 'DOMContentLoaded' é o nome do evento que ocorre quando o HTML termina de carregar
-    // A função anônima function() { ... } contém o código que será executado quando o evento ocorrer
-    // Basicamente, esta função garante que o script só executa depois que o documento HTML está completamente carregado
-
-        const dropdownButton = document.getElementById('dropdownButton');
-        const dropdownContent = document.getElementById('dropdownContent');
-        const dropdown = document.getElementById('mainDropdown');
-        
-    // Toggle dropdown ao clicar no botão
-    dropdownButton.addEventListener('click', function(e) {
-        e.preventDefault(); // Impede o comportamento padrão do botão (importante para botões dentro de formulários)
-        e.stopPropagation(); // Impede que o click se propague para os elementos pai
-        dropdownContent.classList.toggle('show'); // Alterna a classe 'show' no elemento do menu
-        // Se a classe 'show' não existir, ela é adicionada (menu aparece)
-        // Se a classe 'show' já existir, ela é removida (menu desaparece)
-    });
-        
-    // Fechar dropdown quando clicar fora dele
-    document.addEventListener('click', function(e) { // Adiciona um detector de eventos de click a toda a página
-        if (!dropdown.contains(e.target)) { // Verifica se o elemento clicado (e.target) NÃO está dentro do dropdown
-            dropdownContent.classList.remove('show'); // Remove a classe 'show', fazendo o menu desaparecer
-        }
-    });
-});
-</script>
 </body>
 </html>
