@@ -57,44 +57,68 @@
             <input type="text" name="expression" id="display" value="{{ result }}" readonly>
             <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
             <div class="buttons">
-            <!-- Agrupa os botões da calculadora -->
-                <!-- Primeira linha -->
-                <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
-                <button type="button" class="btn special" onclick="backspaceDisplay()">⌫</button>
+                <!-- Primeira linha - 10 botões -->
+                <button type="button" class="btn function" onclick="appendToDisplay('sin(')">sin</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('cos(')">cos</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('tan(')">tan</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('log(')">log</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('ln(')">ln</button>
+                <button type="button" class="btn function" onclick="clearDisplay()">AC</button>
+                <button type="button" class="btn operator" onclick="backspaceDisplay()">⌫</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
-    
-                <!-- Segunda linha -->
+                <button type="button" class="btn operator" onclick="appendToDisplay('/')">/</button>
+                
+                <!-- Segunda linha - 10 botões -->
+                <button type="button" class="btn function" onclick="appendToDisplay('sqrt(')">√</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('abs(')">|x|</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('asin(')">asin</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('acos(')">acos</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('atan(')">atan</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('exp(')">exp</button>
                 <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
                 <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
                 <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
-    
-                <!-- Terceira linha -->
-                <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
-                <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
-                <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
-    
-                <!-- Quarta linha -->
+                
+                <!-- Terceira linha - 10 botões -->
+                <button type="button" class="btn operator" onclick="appendToDisplay('**')">x^y</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('**2')">x²</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('sinh(')">sinh</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('cosh(')">cosh</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('tanh(')">tanh</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('')"> </button>
                 <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
                 <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
                 <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
-    
-                <!-- Quinta linha (nova) -->
-                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
-                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
-                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
+                
+                <!-- Quarta linha - 10 botões -->
+                <button type="button" class="btn function" onclick="appendToDisplay('re(')">Re</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('im(')">Im</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('!')">!</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('mod')">mod</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('1/')">1/x</button>
+                <button type="button" class="btn function" onclick="appendToDisplay('conj(')">conj</button>
+                <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
+                <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
+                <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
-    
-                <!-- Sexta linha -->
-                <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
+                
+                <!-- Quinta linha - 10 botões -->
+                <button type="button" class="btn function" onclick="appendToDisplay('arg(')">arg</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('pi')">π</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('I')">i</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('%')">%</button>
+                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
+                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
+                <button type="button" class="btn" onclick="appendToDisplay(' ')"></button>
+                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
                 <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
-                <button type="submit" class="btn operator">=</button>
-                <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
+                <button type="submit" class="btn operator submit">=</button>
             </div>
             </form>
         </div>
 </body>
 </html>
+
