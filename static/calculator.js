@@ -260,6 +260,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Configurar o toggle de modo angular
+    const angleToggle = document.getElementById('angleModeToggle');
+    const radText = document.querySelector('.angle-mode-toggle span:first-child');
+    const degText = document.querySelector('.angle-mode-toggle span:last-child');
+    
+    // Função para atualizar visualmente o modo ativo
+    function updateAngleModeDisplay() {
+        if (angleToggle && angleToggle.checked) {
+            // Modo graus
+            radText.classList.remove('active');
+            degText.classList.add('active');
+        } else {
+            // Modo radianos
+            radText.classList.add('active');
+            degText.classList.remove('active');
+        }
+    }
+    
+    if (angleToggle) {
+        // Atualizar classes visuais baseado no estado inicial
+        updateAngleModeDisplay();
+        
+        // Adicionar evento de alteração
+        angleToggle.addEventListener('change', function() {
+            // Atualizar visuais imediatamente
+            updateAngleModeDisplay();
+            // Enviar para o servidor para alternar o modo
+            window.location.href = '/toggle_angle_mode';
+        });
+    }
 
     // Configurar o campo de introdução para permitir posicionamento do cursor
     const display = document.getElementById('display');

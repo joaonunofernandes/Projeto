@@ -1,190 +1,201 @@
 body {
-  /* A calculadora aparece centrada na página */
-  font-family: Arial, sans-serif; /* Usa a fonte Arial, com fontes alternativas sans-serif caso a Arial não esteja disponível */
-  background-color: #f0f0f0; /* Define o fundo da página com uma cor cinza claro (código hexadecimal) */
-  display: flex; /* Utiliza o modelo de layout flexível que facilita o alinhamento de elementos */
-  justify-content: center; /* Alinha o conteúdo horizontalmente ao centro da página */
-  align-items: center; /* Alinha o conteúdo verticalmente ao centro da página */
-  height: 100vh; /* Define a altura como 100% da altura da janela de visualização (viewport height) */
-  margin: 0; /* Remove as margens predefinidas do corpo da página para evitar espaços indesejados */
+  /* O corpo da página é configurado para centralizar a calculadora */
+  font-family: Arial, sans-serif; /* Define a fonte principal como Arial, com uma alternativa sans-serif */
+  background-color: #f0f0f0; /* Define o fundo da página com uma cor cinzenta clara */
+  display: flex; /* Usa o modelo de layout flexível para alinhar elementos */
+  justify-content: center; /* Alinha horizontalmente o conteúdo ao centro */
+  align-items: center; /* Alinha verticalmente o conteúdo ao centro */
+  height: 100vh; /* Define a altura como 100% da altura da janela de visualização */
+  margin: 0; /* Remove margens predefinidas para evitar espaços indesejados */
 }
 
 .calculator {
-  /* Destaque visual para a calculadora */
-  width: 100%; /* Ocupa 100% da largura disponível do contentor pai */
-  max-width: 700px; /* Aumentado de 600px para 700px para uma calculadora maior */
-  background-color: #333; /* Define o fundo da calculadora como cinza escuro */
-  padding: 40px; /* Aumentado de 30px para 40px para mais espaço interno */
-  border-radius: 20px; /* Aumentado de 15px para 20px para arredondamento mais suave */
-  box-shadow: 0px 0px 20px 0px #000; /* Sombra mais pronunciada para maior profundidade */
-  text-align: center; /* Centraliza o texto e elementos inline dentro da calculadora */
-  position: relative; /* Estabelece um contexto de posicionamento para elementos filhos com position: absolute */
+  /* Configurações visuais para a calculadora */
+  width: 100%; /* Faz a calculadora ocupar toda a largura disponível */
+  max-width: 700px; /* Define uma largura máxima de 700px */
+  background-color: #333; /* Define o fundo da calculadora como cinzento escuro */
+  padding: 40px; /* Adiciona espaço interno de 40px */
+  border-radius: 20px; /* Arredonda os cantos da calculadora */
+  box-shadow: 0px 0px 20px 0px #000; /* Adiciona uma sombra para criar profundidade */
+  text-align: center; /* Centraliza o texto dentro da calculadora */
+  position: relative; /* Define um contexto de posicionamento para elementos filhos */
 }
 
 h1 {
-  /* Destaque do título sobre o fundo escuro */
-  color: #fff; /* Define o texto do título como branco para contrastar com o fundo escuro */
-  margin-bottom: 25px; /* Aumentado de 20px para 25px */
-  font-size: 32px; /* Aumentado de 28px para 32px */
-  font-weight: 600; /* Define a espessura da fonte como semi-negrito (600 numa escala de 100-900) */
-  letter-spacing: 1px; /* Ajusta o espaçamento entre as letras */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adiciona sombra ao texto para aumentar contraste e legibilidade */
+  /* Estilo do título principal da calculadora */
+  color: #fff; /* Define o texto como branco */
+  margin-bottom: 25px; /* Adiciona espaço abaixo do título */
+  font-size: 32px; /* Define o tamanho da fonte como 32px */
+  font-weight: 600; /* Define a espessura da fonte como semi-negrito */
+  letter-spacing: 1px; /* Adiciona espaçamento entre as letras */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adiciona uma sombra subtil ao texto */
   position: relative; /* Necessário para posicionar elementos pseudo como ::after */
-  padding: 12px 15px; /* Aumentado de 10px 15px para 12px 15px */
-  background-color: #666; /* Fundo cinza médio para o título, contrastando com o fundo da calculadora */
-  border-radius: 10px; /* Aumentado de 8px para 10px */
-  display: block; /* Modificado de inline-block para block para ocupar toda a largura */
-  width: 100%; /* Faz o título ocupar toda a largura disponível */
-  box-sizing: border-box; /* Inclui padding e border na largura total */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra para elevação visual */
-  border: 2px solid #666; /* Borda da mesma cor do fundo para um efeito subtil */
-  margin-top: 60px; /* Espaço acima do título para os botões de menu/histórico */
+  padding: 12px 15px; /* Adiciona espaço interno ao título */
+  background-color: #666; /* Define o fundo do título como cinzento médio */
+  border-radius: 10px; /* Arredonda os cantos do título */
+  display: block; /* Faz o título ocupar toda a largura disponível */
+  width: 100%; /* Garante que o título ocupa toda a largura */
+  box-sizing: border-box; /* Inclui padding e bordas na largura total */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Adiciona uma sombra para dar elevação ao título */
+  border: 2px solid #666; /* Adiciona uma borda subtil ao título */
+  margin-top: 60px; /* Adiciona espaço acima do título */
 }
 
 #display {
-  /* Aspeto visual do ecrã da calculadora */
-  width: 100%; /* Ocupa toda a largura disponível dentro do contentor da calculadora */
-  height: 90px; /* Aumentado de 80px para 90px */
-  font-size: 42px; /* Aumentado de 36px para 42px */
-  text-align: right; /* Alinha o texto à direita, como nas calculadoras tradicionais */
-  padding: 18px; /* Aumentado de 15px para 18px */
-  margin-bottom: 25px; /* Aumentado de 20px para 25px */
-  border-radius: 12px; /* Aumentado de 10px para 12px */
-  border: none; /* Remove a borda predefinida dos elementos input */
-  background-color: #222; /* Define o fundo do ecrã como cinza muito escuro */
-  color: #fff; /* Define a cor do texto como branco para máximo contraste */
-  box-sizing: border-box; /* Garante que o padding não afeta a largura total definida */
+  /* Configurações visuais para o ecrã da calculadora */
+  width: 100%; /* Faz o ecrã ocupar toda a largura disponível */
+  height: 90px; /* Define a altura do ecrã como 90px */
+  font-size: 42px; /* Define o tamanho da fonte como 42px */
+  text-align: right; /* Alinha o texto à direita */
+  padding: 18px; /* Adiciona espaço interno ao ecrã */
+  margin-bottom: 25px; /* Adiciona espaço abaixo do ecrã */
+  border-radius: 12px; /* Arredonda os cantos do ecrã */
+  border: none; /* Remove bordas predefinidas */
+  background-color: #222; /* Define o fundo do ecrã como cinzento muito escuro */
+  color: #fff; /* Define o texto como branco */
+  box-sizing: border-box; /* Inclui padding e bordas na largura total */
   overflow: hidden; /* Impede que o conteúdo ultrapasse os limites do ecrã */
-  cursor: text; /* Altera o cursor para indicar que o texto pode ser selecionado */
+  cursor: text; /* Mostra o cursor de texto ao passar sobre o ecrã */
   caret-color: #ff9500; /* Define a cor do cursor de texto como laranja */
 }
-/* Realce visual do ecrã quando está focado */
+
 #display:focus {
-  outline: 2px solid #ff9500; /* Adiciona um contorno laranja de 2 pixels quando o ecrã está selecionado */
+  /* Estilo aplicado quando o ecrã está focado */
+  outline: 2px solid #ff9500; /* Adiciona um contorno laranja ao ecrã */
 }
 
 .buttons {
-  /* Organização dos botões em grelha */
-  display: grid; /* Utiliza o sistema de layout em grelha CSS para organização dos botões */
-  grid-template-columns: repeat(10, 1fr); /* Mantém 10 colunas de igual largura na grelha */
-  gap: 12px; /* Aumentado de 10px para 12px */
+  /* Configurações para organizar os botões */
+  display: grid; /* Usa o layout em grelha para organizar os botões */
+  grid-template-columns: repeat(10, 1fr); /* Cria 10 colunas de largura igual */
+  gap: 12px; /* Adiciona espaço entre os botões */
 }
 
 .btn {
-  /* Aspeto visual dos botões padrão */
-  width: 100%; /* Cada botão ocupa 100% da largura disponível na sua célula da grelha */
-  padding: 10px 5px; /* Aumentado de 8px 4px para 10px 5px */
-  font-size: 22px; /* Aumentado de 20px para 22px */
-  border: none; /* Remove a borda predefinida dos botões */
-  border-radius: 12px; /* Aumentado de 10px para 12px */
-  background-color: #666; /* Define a cor de fundo dos botões como cinza médio */
-  color: #fff; /* Define a cor do texto como branco para bom contraste */
-  cursor: pointer; /* Altera o cursor para uma mão quando passa por cima, indicando interatividade */
-  transition: background-color 0.2s; /* Cria uma transição suave de 0.2s para mudanças de cor de fundo */
-  height: 80px; /* Aumentado de 70px para 80px */
+  /* Estilo padrão para os botões */
+  width: 100%; /* Faz o botão ocupar toda a largura da célula */
+  padding: 10px 5px; /* Adiciona espaço interno ao botão */
+  font-size: 22px; /* Define o tamanho da fonte como 22px */
+  border: none; /* Remove bordas predefinidas */
+  border-radius: 12px; /* Arredonda os cantos do botão */
+  background-color: #666; /* Define o fundo do botão como cinzento médio */
+  color: #fff; /* Define o texto como branco */
+  cursor: pointer; /* Mostra o cursor de mão ao passar sobre o botão */
+  transition: background-color 0.2s; /* Adiciona uma transição suave para mudanças de cor */
+  height: 80px; /* Define a altura do botão como 80px */
 }
 
 .btn:hover {
-  background-color: #555; /* Escurece ligeiramente os botões quando o cursor passa por cima */
+  /* Estilo aplicado quando o cursor passa sobre o botão */
+  background-color: #555; /* Escurece ligeiramente o fundo do botão */
 }
 
 .operator {
-  /* Estilo dos botões de operação matemática */
-  background-color: #ff9500; /* Define a cor de fundo dos operadores como laranja */
+  /* Estilo para os botões de operação matemática */
+  background-color: #ff9500; /* Define o fundo como laranja */
 }
 
 .operator:hover {
-  /* Efeito ao passar o cursor sobre botões de operação */
-  background-color: #e68a00; /* Escurece ligeiramente a cor laranja quando o cursor passa por cima */
+  /* Estilo aplicado quando o cursor passa sobre os botões de operação */
+  background-color: #e68a00; /* Escurece ligeiramente o fundo */
 }
 
 .btn:active {
-  /* Efeito ao clicar em botões normais */
-  background-color: #444; /* Escurece ainda mais os botões quando clicados */
+  /* Estilo aplicado quando o botão é clicado */
+  background-color: #444; /* Escurece ainda mais o fundo */
 }
 
 .operator:active {
-  /* Efeito ao clicar em botões de operação */
-  background-color: #cc7a00; /* Escurece ainda mais os botões de operação quando clicados */
+  /* Estilo aplicado quando um botão de operação é clicado */
+  background-color: #cc7a00; /* Escurece ainda mais o fundo laranja */
 }
 
 .special {
-  background-color: #9d4edd; /* Define a cor roxa para os botões especiais, diferenciando-os visualmente */
+  /* Estilo para botões especiais */
+  background-color: #9d4edd; /* Define o fundo como roxo */
 }
 
 .special:hover {
-  background-color: #7b2cbf; /* Tom mais escuro ao passar o cursor sobre botões especiais */
+  /* Estilo aplicado quando o cursor passa sobre botões especiais */
+  background-color: #7b2cbf; /* Escurece ligeiramente o fundo */
 }
 
 .special:active {
-  background-color: #5a189a; /* Tom ainda mais escuro ao clicar nos botões especiais */
+  /* Estilo aplicado quando um botão especial é clicado */
+  background-color: #5a189a; /* Escurece ainda mais o fundo */
 }
 
 .dropdown {
-  position: absolute; /* Posicionamento absoluto em relação ao contentor pai (calculator) */
-  top: 40px; /* Ajustado para alinhar com o padding da calculadora */
-  left: 40px; /* Ajustado para alinhar com o padding da calculadora */
-  display: inline-block; /* Faz o elemento ocupar apenas o espaço necessário para o conteúdo */
-  z-index: 10; /* Define a ordem de empilhamento, garantindo que apareça sobre outros elementos */
+  /* Configurações para o menu dropdown */
+  position: absolute; /* Posiciona o menu em relação ao contentor pai */
+  top: 40px; /* Define a distância do topo */
+  left: 40px; /* Define a distância da esquerda */
+  display: inline-block; /* Faz o menu ocupar apenas o espaço necessário */
+  z-index: 10; /* Garante que o menu aparece sobre outros elementos */
 }
 
 .dropbtn {
-  background-color: #ff9500; /* Cor laranja para o botão do menu, combinando com os botões de operação */
-  color: white; /* Texto em branco para contraste com o fundo laranja */
-  padding: 10px 15px; /* Padding consistente com btn-history */
-  font-size: 16px; /* Tamanho de fonte consistente com btn-history */
-  border: none; /* Remove a borda predefinida */
-  border-radius: 8px; /* Raio da borda consistente com btn-history */
-  cursor: pointer; /* Altera o cursor para uma mão, indicando interatividade */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra subtil para dar profundidade ao botão */
-  transition: background-color 0.2s; /* Transição suave para mudanças de cor */
-  font-weight: bold; /* Texto em negrito para melhor visibilidade */
-  width: 110px; /* Largura fixa para combinar com o botão de histórico */
-  height: 40px; /* Altura fixa para combinar com o botão de histórico */
-  display: flex; /* Usar flexbox para centralizar o conteúdo */
+  /* Estilo para o botão do menu dropdown */
+  background-color: #ff9500; /* Define o fundo como laranja */
+  color: white; /* Define o texto como branco */
+  padding: 10px 15px; /* Adiciona espaço interno ao botão */
+  font-size: 16px; /* Define o tamanho da fonte como 16px */
+  border: none; /* Remove bordas predefinidas */
+  border-radius: 8px; /* Arredonda os cantos do botão */
+  cursor: pointer; /* Mostra o cursor de mão ao passar sobre o botão */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Adiciona uma sombra subtil ao botão */
+  transition: background-color 0.2s; /* Adiciona uma transição suave para mudanças de cor */
+  font-weight: bold; /* Define o texto como negrito */
+  width: 110px; /* Define a largura do botão */
+  height: 40px; /* Define a altura do botão */
+  display: flex; /* Usa flexbox para alinhar o conteúdo */
   justify-content: center; /* Centraliza o conteúdo horizontalmente */
   align-items: center; /* Centraliza o conteúdo verticalmente */
 }
 
 .dropdown-content {
-  display: none; /* O menu fica oculto por predefinição */
-  position: absolute; /* Posicionamento absoluto em relação ao contentor .dropdown */
-  background-color: #444; /* Fundo cinza escuro para o menu, harmonizando com a calculadora */
-  min-width: 140px; /* Largura mínima do menu para acomodar o conteúdo */
-  box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.3); /* Sombra para dar profundidade ao menu */
-  z-index: 11; /* Garante que o menu apareça sobre outros elementos */
+  /* Configurações para o conteúdo do menu dropdown */
+  display: none; /* Oculta o menu por predefinição */
+  position: absolute; /* Posiciona o menu em relação ao botão */
+  background-color: #444; /* Define o fundo como cinzento escuro */
+  min-width: 140px; /* Define a largura mínima do menu */
+  box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.3); /* Adiciona uma sombra ao menu */
+  z-index: 11; /* Garante que o menu aparece sobre outros elementos */
   border-radius: 6px; /* Arredonda os cantos do menu */
-  overflow: hidden; /* Garante que o conteúdo não ultrapasse os cantos arredondados */
-  margin-top: 15px; /* Ajustado para criar espaçamento consistente */
-  border: 1px solid #555; /* Borda subtil para definir melhor os limites do menu */
+  overflow: hidden; /* Impede que o conteúdo ultrapasse os limites do menu */
+  margin-top: 15px; /* Adiciona espaço entre o botão e o menu */
+  border: 1px solid #555; /* Adiciona uma borda subtil ao menu */
 }
 
 .dropdown-content a {
-  color: white; /* Texto em branco para contraste com o fundo escuro */
-  padding: 8px 12px; /* Espaço interno para cada item do menu */
-  text-decoration: none; /* Remove o sublinhado predefinido dos links */
-  display: block; /* Faz cada link ocupar toda a largura disponível no menu */
-  transition: background-color 0.2s; /* Transição suave para mudanças de cor */
-  border-bottom: 1px solid #555; /* Separador visual entre itens do menu */
-  font-size: 14px; /* Tamanho da fonte para os itens do menu */
+  /* Estilo para os itens do menu dropdown */
+  color: white; /* Define o texto como branco */
+  padding: 8px 12px; /* Adiciona espaço interno aos itens */
+  text-decoration: none; /* Remove sublinhados dos links */
+  display: block; /* Faz os links ocuparem toda a largura disponível */
+  transition: background-color 0.2s; /* Adiciona uma transição suave para mudanças de cor */
+  border-bottom: 1px solid #555; /* Adiciona uma linha separadora entre os itens */
+  font-size: 14px; /* Define o tamanho da fonte como 14px */
 }
 
 .dropdown-content a:last-child {
-  border-bottom: none; /* Remove a borda inferior do último item do menu */
+  /* Remove a linha separadora do último item */
+  border-bottom: none;
 }
 
 .dropdown-content.show {
-  display: block; /* Mostra o menu quando a classe .show é adicionada */
+  /* Mostra o menu quando a classe .show é adicionada */
+  display: block;
 }
-
 
 .dropdown-content a:hover {
-  background-color: #555; /* Destaque visual ao passar o cursor sobre os itens do menu */
+  /* Estilo aplicado quando o cursor passa sobre os itens do menu */
+  background-color: #555; /* Escurece ligeiramente o fundo */
 }
 
-
 .dropdown:hover .dropbtn {
-  background-color: #e68a00; /* Escurece o botão do menu ao passar o cursor */
+  /* Estilo aplicado quando o cursor passa sobre o botão do menu */
+  background-color: #e68a00; /* Escurece ligeiramente o fundo */
 }
 
 .navigation {
@@ -376,4 +387,87 @@ h1 {
 /* Botões que ocupam duas linhas */
 .btn-tall {
   grid-row: span 2;
+}
+
+/* Estilos para o botão toggle de modo angular */
+.angle-mode-toggle {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background-color: #222;
+  padding: 5px 10px;
+  border-radius: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  border: 1px solid #444;
+  transition: all 0.3s ease;
+}
+
+.angle-mode-toggle span {
+  color: #999;
+  font-size: 14px;
+  font-weight: normal; /* Normal por padrão */
+  padding: 0 5px;
+  transition: all 0.3s; /* Transição suave para todas as propriedades */
+}
+
+.angle-mode-toggle span.active {
+  color: #ff9500;
+  font-weight: bold; /* Negrito quando ativo */
+}
+
+/* Estilo do switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  margin: 0 5px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #666;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #ff9500;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }

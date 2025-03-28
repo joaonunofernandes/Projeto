@@ -18,159 +18,187 @@ app.secret_key = os.urandom(24)  # Chave secreta necessária para a sessão
 # Todas as requisições subsequentes do mesmo navegador incluem este cookie
 # A geração de uma chave aleatória é importante para a segurança da aplicação
 
-@app.route("/", methods=["GET", "POST"])  # Define a rota principal (/) e os métodos HTTP permitidos
+@app.route("/", methods=["GET", "POST"])
 def calculatormain():
     # Inicializar histórico se não existir na sessão
-    # Esta verificação é feita em cada acesso à página
     if 'history' not in session:
         session['history'] = []
-        # Os dados em session['history'] são específicos para cada sessão individual
-        # Nenhum utilizador pode aceder dados de outros utilizadores
-        # Isto garante privacidade e isolamento dos dados entre diferentes utilizadores
+    
+    # Inicializar o modo angular (radianos por padrão)
+    if 'angle_mode' not in session:
+        session['angle_mode'] = 'rad'
+    
+    # Processar alteração do modo angular se solicitado
+    if request.args.get('toggle_angle_mode'):
+        if session['angle_mode'] == 'rad':
+            session['angle_mode'] = 'deg'
+        else:
+            session['angle_mode'] = 'rad'
+        # Redirecionar para remover parâmetro da URL
+        return redirect(url_for('calculatormain'))
         
-    result = ""  # Inicializa a variável de resultado como uma string vazia
-    if request.method == "POST":  # Verifica se o método da requisição é POST (formulário submetido)
+    result = ""
+    if request.method == "POST":
         try:
-            # Obtém a expressão do formulário submetido pelo utilizador
+            # Obtém a expressão matemática submetida pelo utilizador através do formulário
             expression = request.form["expression"]
             
-            # Preparar expressão para números complexos
-            # Substitui notações como "2j" por "2*I" para compatibilidade com o SymPy
-            expression = re.sub(r'(\d+)j', r'\1*I', expression)
+            # Converte representação de números complexos para o formato reconhecido pelo SymPy
+            # Substitui expressões como '3j' ou '5i' por '3*I' ou '5*I' que o SymPy consegue interpretar
+            expression = re.sub(r'(\d+)[ji]', r'\1*I', expression)
             
-            # Processar a expressão
-            # Converte a string da expressão para uma expressão SymPy que pode ser avaliada
+            # Verifica se o modo angular atual é graus e adapta as funções trigonométricas adequadamente
+            if session['angle_mode'] == 'deg':
+                # Converte os argumentos das funções trigonométricas diretas de graus para radianos
+                # Multiplica os argumentos por pi/180 para converter graus em radianos
+                expression = re.sub(r'sin\((.*?)\)', r'sin((pi/180)*(\1))', expression)
+                expression = re.sub(r'cos\((.*?)\)', r'cos((pi/180)*(\1))', expression)
+                expression = re.sub(r'tan\((.*?)\)', r'tan((pi/180)*(\1))', expression)
+    
+                # Converte os resultados das funções trigonométricas inversas de radianos para graus
+                # Multiplica os resultados por 180/pi para converter radianos em graus
+                expression = re.sub(r'asin\((.*?)\)', r'(180/pi)*asin(\1)', expression)
+                expression = re.sub(r'acos\((.*?)\)', r'(180/pi)*acos(\1)', expression)
+                expression = re.sub(r'atan\((.*?)\)', r'(180/pi)*atan(\1)', expression)
+            
+            # Processa a expressão matemática utilizando o SymPy para cálculo simbólico
             sympy_result = parse_expr(expression)
-            # Calcula o valor numérico da expressão com 10 casas decimais de precisão
+            # Avalia numericamente a expressão com 10 dígitos significativos
             computed = sympy_result.evalf(10)
-            
-            # Formatar resultado com base no tipo
-            if computed.is_real:  # Verifica se o resultado é um número real
-                # Verificar se é um número inteiro ou tem apenas zeros na parte decimal
+
+            # Formata o resultado para exibição conforme o tipo de número
+            if computed.is_real:
+                # Se o resultado for um número real, verifica se é inteiro ou decimal
                 if computed.is_integer or float(computed) == int(float(computed)):
-                    # Se for inteiro, converte para inteiro e depois para string
+                    # Se for inteiro ou tiver apenas zeros na parte decimal, exibe como inteiro
                     result = str(int(float(computed)))
                 else:
-                    # Manter 8 casas decimais para números reais não inteiros
-                    # Formata o número com 8 casas decimais para melhor legibilidade
-                    result = f"{float(computed):.8f}"
-            else:  # Se o resultado for complexo
-                # Formatar parte real e imaginária separadamente
-                # Extrai a parte real e imaginária do número complexo
+                    # Para números decimais, mantém até 8 casas decimais e remove zeros à direita
+                    result = f"{float(computed):.8f}".rstrip('0').rstrip('.')
+            else:
+                # Para números complexos, formata as partes real e imaginária separadamente
                 real_part = float(computed.as_real_imag()[0])
                 imag_part = float(computed.as_real_imag()[1])
-                
-                # Verificar se a parte real é inteira
+    
+                # Verifica se a parte real é um número inteiro
                 if real_part == int(real_part):
-                    # Se for inteira, converte para inteiro e depois para string
                     real_str = str(int(real_part))
                 else:
-                    # Senão, formata com 8 casas decimais
-                    real_str = f"{real_part:.8f}"
-                    
-                # Verificar se a parte imaginária é inteira
+                    # Formata a parte real com até 8 casas decimais, removendo zeros à direita
+                    real_str = f"{real_part:.8f}".rstrip('0').rstrip('.')
+        
+                # Verifica se a parte imaginária é um número inteiro
                 if imag_part == int(imag_part):
-                    # Se for inteira, converte para inteiro e depois para string
                     imag_str = str(int(imag_part))
                 else:
-                    # Senão, formata com 8 casas decimais
-                    imag_str = f"{imag_part:.8f}"
-                
-                # Formatação do número complexo
-                # Constrói uma string formatada adequadamente para representar o número complexo
+                    # Formata a parte imaginária com até 8 casas decimais, removendo zeros à direita
+                    imag_str = f"{imag_part:.8f}".rstrip('0').rstrip('.')
+    
+                # Formata o número complexo completo com as partes real e imaginária
                 if imag_part >= 0:
-                    result = f"{real_str} + {imag_str}j"
+                    result = f"{real_str} + {imag_str}i" # Utiliza 'i' como unidade imaginária
                 else:
-                    result = f"{real_str} {imag_str}j"
-            
-            # Adicionar ao histórico (formato: expressão = resultado)
-            # Cria um dicionário com a expressão e o resultado calculado
+                    result = f"{real_str} {imag_str}i"
+
+            # Adiciona o cálculo ao histórico do utilizador
             history_entry = {'expression': expression, 'result': result}
-            # Adicionar ao início para ter os mais recentes primeiro
+            # Insere o novo cálculo no início do histórico para mostrar os mais recentes primeiro
             history = session['history']
-            history.insert(0, history_entry)  # Insere no início da lista
-            # Manter apenas os 20 últimos cálculos
-            # Isto evita que o histórico cresça indefinidamente e ocupe muita memória
+            history.insert(0, history_entry)
+            # Limita o histórico aos 20 cálculos mais recentes para evitar consumo excessivo de memória
             if len(history) > 20:
-                history = history[:20]  # Mantém apenas os primeiros 20 elementos
-            session['history'] = history  # Atualiza o histórico na sessão
+                history = history[:20]
+            # Atualiza o histórico na sessão do utilizador
+            session['history'] = history
             
         except Exception as e:
-            # Em caso de erro na expressão ou cálculo, cria uma mensagem de erro
+            # Em caso de erro durante o processamento, exibe uma mensagem de erro
             result = f"Erro: {str(e)}"
 
-    # Passar histórico para o template
-    # Obtém o histórico da sessão atual ou uma lista vazia se não existir
+    # Prepara os dados para renderização do template
     history = session.get('history', [])
-    # Renderiza o template HTML com o resultado e o histórico
-    return render_template("calculator.html", result=result, history=history)
+    angle_mode = session.get('angle_mode', 'rad')
+    # Renderiza o template HTML com os dados preparados
+    return render_template("calculator.html", result=result, history=history, angle_mode=angle_mode)
 
+# Rota para alternar entre modos de ângulo (radianos/graus)
+@app.route("/toggle_angle_mode")
+def toggle_angle_mode():
+    # Alterna entre os modos de ângulo: radianos (rad) e graus (deg)
+    if session.get('angle_mode') == 'rad':
+        session['angle_mode'] = 'deg'
+    else:
+        session['angle_mode'] = 'rad'
+    # Redireciona o utilizador de volta à página anterior ou à página inicial
+    return redirect(request.referrer or '/')
 
 @app.route("/quaternions", methods=["GET", "POST"])
 def quaternions():
-    # Inicializa o histórico de cálculos de quaterniões se não existir
+    # Inicializa o histórico de cálculos de quaterniões se não existir na sessão
     if 'quaternion_history' not in session:
         session['quaternion_history'] = []
         
     result = ""  # Inicializa a variável de resultado
-    if request.method == "POST":  # Se o formulário foi submetido
+    if request.method == "POST":  # Verifica se o pedido é do tipo POST (submissão de formulário)
         try:
-            # Obtém a expressão do formulário
+            # Obtém a expressão matemática submetida pelo utilizador
             expression = request.form["expression"]
-            # Avalia a expressão diretamente - cuidado com segurança em produção!
-            result = eval(expression)  # Cuidado com eval() em ambiente de produção!
+            # Avalia a expressão diretamente utilizando eval()
+            # Nota: O uso de eval() pode apresentar riscos de segurança em ambiente de produção
+            result = eval(expression)
             
-            # Adicionar ao histórico
-            # Cria um registo com a expressão e o resultado
+            # Adiciona o cálculo ao histórico de quaterniões
+            # Cria um registo contendo a expressão e o resultado
             history_entry = {'expression': expression, 'result': str(result)}
             history = session['quaternion_history']
-            history.insert(0, history_entry)  # Adiciona ao início da lista
+            history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
-                history = history[:20]  # Limita a 20 entradas
+                history = history[:20]  # Limita o histórico a 20 entradas
             session['quaternion_history'] = history  # Atualiza o histórico na sessão
             
         except Exception as e:
-            # Em caso de erro, cria uma mensagem de erro
+            # Em caso de erro durante o processamento, exibe uma mensagem de erro
             result = f"Erro: {str(e)}"
             
-    # Obtém o histórico atual ou uma lista vazia
+    # Obtém o histórico atual de cálculos de quaterniões ou inicializa uma lista vazia
     history = session.get('quaternion_history', [])
-    # Renderiza o template com o resultado e histórico
+    # Renderiza o template HTML para a calculadora de quaterniões
     return render_template("quaternion.html", result=result, history=history)
 
 @app.route("/coquaternions", methods=["GET", "POST"])
 def coquaternions():
-    # Inicializa o histórico de cálculos de coquaterniões se não existir
+    # Inicializa o histórico de cálculos de coquaterniões se não existir na sessão
     if 'coquaternion_history' not in session:
         session['coquaternion_history'] = []
         
     result = ""  # Inicializa a variável de resultado
-    if request.method == "POST":  # Se o formulário foi submetido
+    if request.method == "POST":  # Verifica se o pedido é do tipo POST (submissão de formulário)
         try:
-            # Obtém a expressão do formulário
+            # Obtém a expressão matemática submetida pelo utilizador
             expression = request.form["expression"]
-            # Avalia a expressão diretamente - cuidado com segurança em produção!
-            result = eval(expression)  # Cuidado com eval() em ambiente de produção!
+            # Avalia a expressão diretamente utilizando eval()
+            # Nota: O uso de eval() pode apresentar riscos de segurança em ambiente de produção
+            result = eval(expression)
             
-            # Adicionar ao histórico
-            # Cria um registo com a expressão e o resultado
+            # Adiciona o cálculo ao histórico de coquaterniões
+            # Cria um registo contendo a expressão e o resultado
             history_entry = {'expression': expression, 'result': str(result)}
             history = session['coquaternion_history']
-            history.insert(0, history_entry)  # Adiciona ao início da lista
+            history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
-                history = history[:20]  # Limita a 20 entradas
+                history = history[:20]  # Limita o histórico a 20 entradas
             session['coquaternion_history'] = history  # Atualiza o histórico na sessão
             
         except Exception as e:
-            # Em caso de erro, cria uma mensagem de erro
+            # Em caso de erro durante o processamento, exibe uma mensagem de erro
             result = f"Erro: {str(e)}"
             
-    # Obtém o histórico atual ou uma lista vazia
+    # Obtém o histórico atual de cálculos de coquaterniões ou inicializa uma lista vazia
     history = session.get('coquaternion_history', [])
-    # Renderiza o template com o resultado e histórico
+    # Renderiza o template HTML para a calculadora de coquaterniões
     return render_template("coquaternion.html", result=result, history=history)
 
-# Adicionar rota para limpar histórico
+# Rota para limpar o histórico de cálculos
 @app.route("/clear_history/<calculator_type>")
 def clear_history(calculator_type):
     # Esta função limpa o histórico de cálculos com base no tipo de calculadora
@@ -180,17 +208,21 @@ def clear_history(calculator_type):
         session['quaternion_history'] = []  # Limpa o histórico da calculadora de quaterniões
     elif calculator_type == 'coquaternion':
         session['coquaternion_history'] = []  # Limpa o histórico da calculadora de coquaterniões
-    # Redireciona para a página de onde veio o pedido ou para a página inicial
+    # Redireciona o utilizador de volta à página anterior ou à página inicial
     return redirect(request.referrer or '/')
 
 if __name__ == "__main__":
     # Executa a aplicação quando o script é executado diretamente
     # O modo debug permite recarregar automaticamente quando há alterações no código
+    # Facilita o desenvolvimento pois não é necessário reiniciar manualmente o servidor
     app.run(debug=True)
 
+# Questões para consideração:
 # Perguntar se os professores querem que seja possível utilizar a calculadora com o teclado
-# Esta funcionalidade permitiria uma interação mais rápida e intuitiva para utilizadores
-# habituados a utilizar teclado em calculadoras
+# Perguntar qual ângulo preferem como predefinição (radianos ou graus)
+# Perguntar se devemos meter o imaginário com i ou j (sendo que j é a notação python
+# Perguntar se há botões a mais e quais faltam
 
-# Reminders:
-# Ter cuidado com a alteração dos botões de mover o cursor porque causa de apagar ou não o resultado 
+# Lembretes:
+# Ter cuidado com a alteração dos botões de mover o cursor porque pode causar problemas com apagar ou manter o resultado
+# Quando utilizamos asin(2) na parte imaginária aparece 'j' em vez de 'i'
