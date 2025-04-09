@@ -71,8 +71,8 @@ h1 {
   gap: 12px; /* Adiciona espaço entre os botões */
 }
 
+/* Para os botões normais (números), mantemos o cinza */
 .btn {
-  /* Estilo padrão para os botões */
   width: 100%; /* Faz o botão ocupar toda a largura da célula */
   padding: 10px 5px; /* Adiciona espaço interno ao botão */
   font-size: 22px; /* Define o tamanho da fonte como 22px */
@@ -86,8 +86,12 @@ h1 {
 }
 
 .btn:hover {
-  /* Estilo aplicado quando o cursor passa sobre o botão */
   background-color: #555; /* Escurece ligeiramente o fundo do botão */
+}
+
+/* Ajustar tamanho da fonte para funções com nomes maiores */
+.btn.function-math {
+  font-size: 18px; /* Ligeiramente menor para acomodar nomes maiores */
 }
 
 .operator {
@@ -110,20 +114,32 @@ h1 {
   background-color: #cc7a00; /* Escurece ainda mais o fundo laranja */
 }
 
+/* Ajustar a cor dos botões especiais para roxo */
 .special {
-  /* Estilo para botões especiais */
-  background-color: #9d4edd; /* Define o fundo como roxo */
+  background-color: #9d4edd; /* Roxo para botões especiais */
 }
 
 .special:hover {
-  /* Estilo aplicado quando o cursor passa sobre botões especiais */
-  background-color: #7b2cbf; /* Escurece ligeiramente o fundo */
+  background-color: #7b2cbf; /* Tom mais escuro ao passar o cursor */
 }
 
 .special:active {
-  /* Estilo aplicado quando um botão especial é clicado */
-  background-color: #5a189a; /* Escurece ainda mais o fundo */
+  background-color: #5a189a; /* Tom ainda mais escuro ao clicar */
 }
+
+.function-math {
+  background-color: #3a86ff; /* Cor azul mais vibrante para funções matemáticas */
+  color: white; /* Texto em branco para contraste */
+}
+
+.function-math:hover {
+  background-color: #2a75e0; /* Tom mais escuro ao passar o cursor */
+}
+
+.function-math:active {
+  background-color: #1a64d1; /* Tom ainda mais escuro ao clicar */
+}
+
 
 .dropdown {
   /* Configurações para o menu dropdown */
@@ -198,16 +214,17 @@ h1 {
   background-color: #e68a00; /* Escurece ligeiramente o fundo */
 }
 
+/* Manter a cor azul para botões de navegação */
 .navigation {
-  background-color: #4a6fa5; /* Cor azul para botões de navegação, diferenciando-os visualmente */
+  background-color: #4a6fa5; /* Cor azul para botões de navegação */
 }
 
 .navigation:hover {
-  background-color: #3a5a80; /* Tom mais escuro ao passar o cursor sobre botões de navegação */
+  background-color: #3a5a80; /* Tom mais escuro ao passar o cursor */
 }
 
 .navigation:active {
-  background-color: #2a4a70; /* Tom ainda mais escuro ao clicar nos botões de navegação */
+  background-color: #2a4a70; /* Tom ainda mais escuro ao clicar */
 }
 
 /* Estilos para o botão e painel de histórico */

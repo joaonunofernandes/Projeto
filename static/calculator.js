@@ -10,25 +10,31 @@ function appendToDisplay(value) {
     const display = document.getElementById('display');
     // Obtém o elemento HTML com id="display" (o campo de texto da calculadora) e guarda-o na constante 'display'
     
-    // Verificar se o valor é um operador matemático
+    // Verificar se o valor é um operador matemático ou uma função matemática
     const isOperator = ['+', '-', '*', '/', '×', '÷'].includes(value);
-    // Cria uma constante 'isOperator' que será verdadeira se o valor passado for um dos operadores na matriz, e falsa caso contrário
-    // Utiliza o método includes() para verificar se o valor está presente na matriz de operadores
+    // Verifica se o valor é uma função matemática (termina com parêntese aberto)
+    const isMathFunction = value.endsWith('(');
+    // Verifica se é operação de potência
+    const isPowerOperation = value === '**' || value === '**2';
     
     // Se um resultado estiver a ser apresentado no ecrã...
     if (resultDisplayed) {
-        // Se for um operador, adiciona-o após o resultado
-        if (isOperator) {
-            // Mantém o resultado atual e adiciona o operador no final
-            display.value = display.value + value;
-            // Posiciona o cursor no final da expressão
-            display.setSelectionRange(display.value.length, display.value.length);
-            // O método setSelectionRange(inicio, fim) define a posição do cursor no campo de texto
-            // inicio: O índice onde a seleção deve começar (índice baseado em zero)
-            // fim: O índice onde a seleção deve terminar
-            // Quando ambos são iguais, apenas posiciona o cursor sem selecionar texto
+        // Se for um operador, uma função matemática ou potência, adiciona-o após o resultado
+        if (isOperator || isMathFunction || isPowerOperation) {
+            if (isMathFunction) {
+                // Para funções matemáticas, coloca a função antes do resultado e adiciona o parêntese de fechamento
+                display.value = value + display.value + ')';
+                // Como neste caso estamos trabalhando com um resultado, posicionamos o cursor no final
+                // Pois queremos manter o resultado inteiro dentro dos parênteses
+                display.setSelectionRange(display.value.length, display.value.length);
+            } else {
+                // Para operadores ou potência, adiciona após o resultado
+                display.value = display.value + value;
+                // Posiciona o cursor no final da expressão
+                display.setSelectionRange(display.value.length, display.value.length);
+            }
         } else {
-            // Se não for um operador, substitui completamente o resultado atual pelo novo valor
+            // Se não for um operador nem uma função, substitui completamente o resultado atual pelo novo valor
             display.value = value;
             // Posiciona o cursor após o novo valor introduzido
             display.setSelectionRange(value.length, value.length);
@@ -53,16 +59,22 @@ function appendToDisplay(value) {
     const textAfter = display.value.substring(cursorPos);
     // Extrai o texto desde a posição do cursor até ao final do campo
     
-    display.value = textBefore + value + textAfter;
-    // Constrói o novo valor do campo: texto antes + novo valor + texto depois
-    // Isto insere o novo carácter exatamente na posição do cursor
-    
-    // Posiciona o cursor logo após o carácter inserido
-    const newCursorPos = cursorPos + value.length;
-    // Calcula a nova posição do cursor somando o comprimento do valor inserido
-    
-    display.setSelectionRange(newCursorPos, newCursorPos);
-    // Move o cursor para a nova posição calculada
+    // Verifica se o valor é uma função matemática (termina com parêntese aberto)
+    if (value.endsWith('(')) {
+        // Para funções matemáticas, adiciona o parêntese de fechamento automaticamente
+        display.value = textBefore + value + ')' + textAfter;
+        
+        // Posiciona o cursor logo após o parêntese de abertura
+        const newCursorPos = cursorPos + value.length;
+        display.setSelectionRange(newCursorPos, newCursorPos);
+    } else {
+        // Para outros valores, comportamento normal
+        display.value = textBefore + value + textAfter;
+        
+        // Posiciona o cursor logo após o valor inserido
+        const newCursorPos = cursorPos + value.length;
+        display.setSelectionRange(newCursorPos, newCursorPos);
+    }
     
     // Mantém o foco no campo de introdução
     display.focus();

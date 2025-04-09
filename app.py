@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, url_for, session, redirect
 import re
-from sympy.parsing.sympy_parser import parse_expr
-from sympy import sympify
+import numpy as np
 import os
+import math
 
 # O sistema de "session" (ver import) do Flask foi projetado especificamente para este propósito: 
 # manter dados isolados entre diferentes utilizadores enquanto mantém persistência para um mesmo utilizador.
@@ -17,6 +17,118 @@ app.secret_key = os.urandom(24)  # Chave secreta necessária para a sessão
 # Este cookie contém um identificador de sessão criptografado
 # Todas as requisições subsequentes do mesmo navegador incluem este cookie
 # A geração de uma chave aleatória é importante para a segurança da aplicação
+
+# Dicionário global para mapear funções matemáticas aos métodos do NumPy
+# Isso permitirá avaliar expressões com funções de forma segura sem usar eval()
+NUMPY_FUNCTIONS = {
+    'sin': np.sin,
+    'cos': np.cos,
+    'tan': np.tan,
+    'asin': np.arcsin,
+    'acos': np.arccos,
+    'atan': np.arctan,
+    'sinh': np.sinh,
+    'cosh': np.cosh,
+    'tanh': np.tanh,
+    'sqrt': np.sqrt,
+    'abs': np.abs,
+    'log': np.log10,
+    'ln': np.log,
+    'exp': np.exp,
+    'pi': np.pi,
+    'e': np.e,
+    'real': np.real,
+    'imag': np.imag,
+    'conj': np.conj,
+    'arg': np.angle,
+    'mod': np.mod,
+}
+
+def parse_complex_expr(expression):
+    """
+    Converte uma expressão matemática em formato adequado para o NumPy,
+    tratando números complexos e substituindo funções.
+    """
+    # Substituir 'i' e 'j' por '1j' quando forem a unidade imaginária isolada
+    expression = re.sub(r'(?<![0-9a-zA-Z])i(?![0-9a-zA-Z_(])', '1j', expression)
+    #expression = re.sub(r'(?<![0-9])j(?![0-9a-zA-Z_(])', '1j', expression)
+    
+    # Substituir notações como 3i ou 5j por 3j ou 5j (formato NumPy)
+    expression = re.sub(r'(\d+)i(?![a-zA-Z0-9_(])', r'\1j', expression)
+    
+    # Substituir espaços entre números e 'j' (ex: "3 j" para "3j")
+    expression = re.sub(r'(\d+)\s+j', r'\1j', expression)
+    
+    # Substituir função mod(x, y) por np.mod(x, y)
+    expression = re.sub(r'mod\s*\(([^,]+),([^)]+)\)', r'np.mod(\1,\2)', expression)
+    
+    # Substituir operadores de potência
+    expression = re.sub(r'(\d+|[a-zA-Z_]+|\))\s*\*\*\s*(\d+|[a-zA-Z_]+|\()', r'\1**\2', expression)
+    
+    return expression
+
+def safe_eval_expr(expression, angle_mode='rad'):
+    """
+    Avalia expressões matemáticas de forma segura usando NumPy,
+    com suporte para diferentes modos angulares.
+    
+    Args:
+        expression: A expressão matemática a ser avaliada
+        angle_mode: 'rad' para radianos, 'deg' para graus
+    
+    Returns:
+        O resultado da avaliação da expressão
+    """
+    # Preparar ambiente seguro para avaliação
+    safe_env = {
+        'np': np,
+        'pi': np.pi,
+        'e': np.e,
+        'j': 1j,  # j é a unidade imaginária no NumPy
+    }
+    
+    # Adicionar funções matemáticas ao ambiente
+    for func_name, func in NUMPY_FUNCTIONS.items():
+        safe_env[func_name] = func
+    
+    # Processar expressões trigonométricas para o modo angular correto
+    if angle_mode == 'deg':
+        # Para funções trigonométricas diretas, converter entrada de grau para radiano
+        expression = re.sub(r'sin\((.*?)\)', r'sin((pi/180)*(\1))', expression)
+        expression = re.sub(r'cos\((.*?)\)', r'cos((pi/180)*(\1))', expression)
+        expression = re.sub(r'tan\((.*?)\)', r'tan((pi/180)*(\1))', expression)
+        
+        # Para funções trigonométricas inversas, converter saída de radiano para grau
+        expression = re.sub(r'asin\((.*?)\)', r'(180/pi)*asin(\1)', expression)
+        expression = re.sub(r'acos\((.*?)\)', r'(180/pi)*acos(\1)', expression)
+        expression = re.sub(r'atan\((.*?)\)', r'(180/pi)*atan(\1)', expression)
+    
+    # Substituir funções específicas pelo equivalente NumPy
+    parsed_expr = parse_complex_expr(expression)
+    
+    # Avaliar a expressão no ambiente seguro
+    try:
+        return eval(parsed_expr, {"__builtins__": {}}, safe_env)
+    except Exception as e:
+        raise ValueError(f"Erro ao avaliar expressão: {str(e)}")
+
+ 
+def format_result(value):
+    """
+    Formata o resultado para exibição, processando números complexos
+    e reais com formatação apropriada, garantindo que o resultado seja JSON serializável.
+    """
+    # Para números complexos
+    if isinstance(value, complex):
+        # Converter para string formatada
+        return str(value).replace('j', 'i')
+    
+    # Para arrays NumPy ou outros tipos NumPy
+    elif isinstance(value, np.ndarray) or isinstance(value, np.number):
+        return str(value)
+    
+    # Para outros tipos, converter para string
+    return str(value)
 
 @app.route("/", methods=["GET", "POST"])
 def calculatormain():
@@ -43,63 +155,12 @@ def calculatormain():
             # Obtém a expressão matemática submetida pelo utilizador através do formulário
             expression = request.form["expression"]
             
-            # Converte representação de números complexos para o formato reconhecido pelo SymPy
-            # Substitui expressões como '3j' ou '5i' por '3*I' ou '5*I' que o SymPy consegue interpretar
-            expression = re.sub(r'(\d+)[ji]', r'\1*I', expression)
-            
-            # Verifica se o modo angular atual é graus e adapta as funções trigonométricas adequadamente
-            if session['angle_mode'] == 'deg':
-                # Converte os argumentos das funções trigonométricas diretas de graus para radianos
-                # Multiplica os argumentos por pi/180 para converter graus em radianos
-                expression = re.sub(r'sin\((.*?)\)', r'sin((pi/180)*(\1))', expression)
-                expression = re.sub(r'cos\((.*?)\)', r'cos((pi/180)*(\1))', expression)
-                expression = re.sub(r'tan\((.*?)\)', r'tan((pi/180)*(\1))', expression)
-    
-                # Converte os resultados das funções trigonométricas inversas de radianos para graus
-                # Multiplica os resultados por 180/pi para converter radianos em graus
-                expression = re.sub(r'asin\((.*?)\)', r'(180/pi)*asin(\1)', expression)
-                expression = re.sub(r'acos\((.*?)\)', r'(180/pi)*acos(\1)', expression)
-                expression = re.sub(r'atan\((.*?)\)', r'(180/pi)*atan(\1)', expression)
-            
-            # Processa a expressão matemática utilizando o SymPy para cálculo simbólico
-            sympy_result = parse_expr(expression)
-            # Avalia numericamente a expressão com 10 dígitos significativos
-            computed = sympy_result.evalf(10)
+            # Avaliar a expressão usando nossa função segura com NumPy
+            computed = safe_eval_expr(expression, session['angle_mode'])
 
-            # Formata o resultado para exibição conforme o tipo de número
-            if computed.is_real:
-                # Se o resultado for um número real, verifica se é inteiro ou decimal
-                if computed.is_integer or float(computed) == int(float(computed)):
-                    # Se for inteiro ou tiver apenas zeros na parte decimal, exibe como inteiro
-                    result = str(int(float(computed)))
-                else:
-                    # Para números decimais, mantém até 8 casas decimais e remove zeros à direita
-                    result = f"{float(computed):.8f}".rstrip('0').rstrip('.')
-            else:
-                # Para números complexos, formata as partes real e imaginária separadamente
-                real_part = float(computed.as_real_imag()[0])
-                imag_part = float(computed.as_real_imag()[1])
-    
-                # Verifica se a parte real é um número inteiro
-                if real_part == int(real_part):
-                    real_str = str(int(real_part))
-                else:
-                    # Formata a parte real com até 8 casas decimais, removendo zeros à direita
-                    real_str = f"{real_part:.8f}".rstrip('0').rstrip('.')
-        
-                # Verifica se a parte imaginária é um número inteiro
-                if imag_part == int(imag_part):
-                    imag_str = str(int(imag_part))
-                else:
-                    # Formata a parte imaginária com até 8 casas decimais, removendo zeros à direita
-                    imag_str = f"{imag_part:.8f}".rstrip('0').rstrip('.')
-    
-                # Formata o número complexo completo com as partes real e imaginária
-                if imag_part >= 0:
-                    result = f"{real_str} + {imag_str}i" # Utiliza 'i' como unidade imaginária
-                else:
-                    result = f"{real_str} {imag_str}i"
-
+            # Formatar o resultado para exibição
+            result = format_result(computed)
+            
             # Adiciona o cálculo ao histórico do utilizador
             history_entry = {'expression': expression, 'result': result}
             # Insere o novo cálculo no início do histórico para mostrar os mais recentes primeiro
@@ -219,9 +280,12 @@ if __name__ == "__main__":
 
 # Questões para consideração:
 # Perguntar se os professores querem que seja possível utilizar a calculadora com o teclado
+# Res: Implementar
 # Perguntar qual ângulo preferem como predefinição (radianos ou graus)
+# Res: Radianos
 # Perguntar se devemos meter o imaginário com i ou j (sendo que j é a notação python
 # Perguntar se há botões a mais e quais faltam
+# Res: Respondido
 
 # Lembretes:
 # Ter cuidado com a alteração dos botões de mover o cursor porque pode causar problemas com apagar ou manter o resultado
