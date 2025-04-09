@@ -23,4 +23,10 @@ A calculadora foi desenvolvida utilizando:
 
 * re 🔍 (para processamento de expressões)
 
+* HTML ✨ (para a estrutura da página)
+
+* CSS 🌈 (para estilização e layout)
+
+* JavaScript 🛠 (para interatividade dinâmica)
+
 * ...
