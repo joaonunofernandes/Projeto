@@ -168,6 +168,19 @@ function moveCursorRight() {
     // Mantém o foco no campo de introdução
 }
 
+// Função para submeter o formulário (calcular o resultado)
+function submitForm() {
+    const form = document.querySelector('form');
+    if (form) {
+        // Indica que após a submissão, o valor apresentado será um resultado
+        setTimeout(function() {
+            resultDisplayed = true;
+        }, 10);
+        
+        form.submit();
+    }
+}
+
 // Adicionar controlo do menu suspenso utilizando JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // 'document' é o objeto que representa toda a página HTML
@@ -324,23 +337,69 @@ document.addEventListener('DOMContentLoaded', function() {
         display.removeAttribute('readonly');
         // Remove o atributo "readonly" para permitir que o cursor seja posicionado
         
-        // Permitir apenas teclas de navegação e retrocesso
+        // Permitir teclas de navegação e retrocesso
         display.addEventListener('keydown', function(e) {
-            // Adiciona detetor de eventos para teclas pressionadas no campo
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Backspace' || 
-                e.key === 'Home' || e.key === 'End' || e.key === 'Delete') {
-                // Verifica se a tecla pressionada é uma das teclas de navegação ou edição permitidas
+            // Previne a ação padrão para praticamente todas as teclas
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+                e.key === 'Home' || e.key === 'End' || 
+                e.key === 'Delete') {
+                // Permite teclas de navegação padrão funcionar normalmente
+                return;
+            }
+            
+            // Para outras teclas, previne comportamento padrão e implementa nosso próprio
+            e.preventDefault();
+            
+            // Lida com tecla backspace
+            if (e.key === 'Backspace') {
+                backspaceDisplay();
+                return;
+            }
+            
+            // Lida com tecla Enter para enviar o formulário
+            if (e.key === 'Enter') {
+                submitForm();
+                return;
+            }
+            
+            // Mapeamento de teclas para funções da calculadora            
+            handleKeyboardInput(e.key);
+        });
+        
+        // Adiciona o evento de teclado global para permitir entrada mesmo quando o display não tem foco
+        document.addEventListener('keydown', function(e) {
+            // Se o display não estiver em foco, mas o foco estiver em outro lugar da página
+            if (document.activeElement !== display && 
+                !e.ctrlKey && !e.altKey && !e.metaKey) {
                 
-                // Permite estas teclas específicas
-                if (e.key === 'Backspace') {
-                    // Caso especial para a tecla de retrocesso
-                    e.preventDefault(); // Impede o comportamento predefinido
-                    backspaceDisplay(); // Usa a nossa própria função de retrocesso
+                // Previne comportamento padrão para teclas que representamos
+                if (isCalculatorKey(e.key)) {
+                    e.preventDefault();
+                    
+                    // Dá foco ao display
+                    display.focus();
+                    
+                    // Lida com tecla backspace
+                    if (e.key === 'Backspace') {
+                        backspaceDisplay();
+                        return;
+                    }
+                    
+                    // Lida com tecla Escape para limpar o display
+                    if (e.key === 'Escape') {
+                        clearDisplay();
+                        return;
+                    }
+                    
+                    // Lida com tecla Enter para enviar o formulário
+                    if (e.key === 'Enter') {
+                        submitForm();
+                        return;
+                    }
+                    
+                    // Mapeamento de teclas para funções da calculadora
+                    handleKeyboardInput(e.key);
                 }
-            } else {
-                // Todas as outras teclas (números, letras, etc.)
-                e.preventDefault(); // Impede a introdução direta de texto
-                // Desta forma, o utilizador só pode adicionar conteúdo através dos botões da calculadora
             }
         });
         
@@ -376,19 +435,120 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Verifica se a tecla pressionada deve ser processada pela calculadora
+function isCalculatorKey(key) {
+    const validKeys = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        '+', '-', '*', '/', '.',
+        '(', ')', 
+        'e', 'i', 'j', 'k', 'p',
+        'Enter', 'Backspace', 'Escape',
+        'ArrowLeft', 'ArrowRight'
+    ];
+    
+    return validKeys.includes(key) || 
+           key === 'π' || 
+           key === '×' || 
+           key === '÷' ||
+           key === ',' ||  // Para usuários que usam vírgula como decimal
+           key === '=' ||
+           key === 's' ||
+           key === 'c' ||
+           key === 't' ||
+           key === 'l';
+}
+
+// Função para lidar com entrada de teclado
+function handleKeyboardInput(key) {
+    // Mapeamento básico de teclas para funções da calculadora
+    switch(key) {
+        // Números e operadores básicos
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case '+': case '-':
+            appendToDisplay(key);
+            break;
+        
+        // Operadores de multiplicação e divisão
+        case '*': case '×':
+            appendToDisplay('*');
+            break;
+        case '/': case '÷':
+            appendToDisplay('/');
+            break;
+        
+        // Ponto decimal (aceita tanto ponto quanto vírgula)
+        case '.': case ',':
+            appendToDisplay('.');
+            break;
+            
+        // Parênteses
+        case '(':
+            appendToDisplay('(');
+            break;
+        case ')':
+            appendToDisplay(')');
+            break;
+            
+        // Valor Pi
+        case 'p': case 'π':
+            appendToDisplay('pi');
+            break;
+            
+        // Unidades imaginárias
+        case 'i':
+            appendToDisplay('i');
+            break;
+        case 'j':
+            appendToDisplay('j');
+            break;
+        case 'k':
+            appendToDisplay('k');
+            break;
+            
+        // Constante matemática e
+        case 'e':
+            appendToDisplay('exp(');
+            break;
+            
+        // Igual
+        case '=':
+            submitForm();
+            break;
+            
+        // Funções trigonométricas
+        case 's':
+            appendToDisplay('sin(');
+            break;
+        case 'c':
+            appendToDisplay('cos(');
+            break;
+        case 't':
+            appendToDisplay('tan(');
+            break;
+        
+        // Logaritmo
+        case 'l':
+            appendToDisplay('log(');
+            break;
+    }
+}
+
 // useHistoryItem : Utiliza um item do histórico na calculadora atual
-function useHistoryItem(expression, result) {
+function useHistoryItem(value, isExpression) {
     const display = document.getElementById('display');
-    // Obtém o elemento do campo de introdução
+    // Coloca o valor selecionado no campo de introdução
+    display.value = value;
     
-    // Coloca a expressão no campo de introdução
-    display.value = expression;
-    // Substitui o conteúdo atual pelo valor da expressão do histórico
-    
-    // Define a posição do cursor no fim da expressão
+    // Define a posição do cursor no fim do valor
     display.focus(); // Dá foco ao campo primeiro
-    display.setSelectionRange(expression.length, expression.length);
-    // Posiciona o cursor após o último carácter da expressão
+    display.setSelectionRange(value.length, value.length);
+    // Posiciona o cursor após o último carácter do valor
+    
+    // Define se o display está mostrando um resultado ou uma expressão
+    // Se for expressão, mantemos resultDisplayed como false para permitir continuar a edição
+    // Se for resultado, definimos como true para que o próximo número substitua o resultado
+    resultDisplayed = !isExpression;
     
     // Fecha o painel de histórico
     const historyPanel = document.getElementById('historyPanel');

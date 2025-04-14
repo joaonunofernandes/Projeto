@@ -30,6 +30,9 @@ NUMPY_FUNCTIONS = {
     'sinh': np.sinh,
     'cosh': np.cosh,
     'tanh': np.tanh,
+    'asinh': np.arcsinh,
+    'acosh': np.arccosh,
+    'atanh': np.arctanh,
     'sqrt': np.sqrt,
     'abs': np.abs,
     'log': np.log10,
@@ -277,16 +280,3 @@ if __name__ == "__main__":
     # O modo debug permite recarregar automaticamente quando há alterações no código
     # Facilita o desenvolvimento pois não é necessário reiniciar manualmente o servidor
     app.run(debug=True)
-
-# Questões para consideração:
-# Perguntar se os professores querem que seja possível utilizar a calculadora com o teclado
-# Res: Implementar
-# Perguntar qual ângulo preferem como predefinição (radianos ou graus)
-# Res: Radianos
-# Perguntar se devemos meter o imaginário com i ou j (sendo que j é a notação python
-# Perguntar se há botões a mais e quais faltam
-# Res: Respondido
-
-# Lembretes:
-# Ter cuidado com a alteração dos botões de mover o cursor porque pode causar problemas com apagar ou manter o resultado
-# Quando utilizamos asin(2) na parte imaginária aparece 'j' em vez de 'i'

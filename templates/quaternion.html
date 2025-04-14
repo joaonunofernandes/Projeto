@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Garante que a página se adapta a diferentes tamanhos de ecrã -->
     <title>Quaternion Calculator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_quaternion_coquaternion.css') }}">
     <!-- Incluir o arquivo JavaScript externo -->
     <script src="{{ url_for('static', filename='calculator.js') }}"></script>
 </head>
@@ -37,9 +37,13 @@
             <div class="history-items">
                 {% if history %}
                     {% for item in history %}
-                    <div class="history-item" onclick="useHistoryItem('{{ item.expression }}', '{{ item.result }}')">
+                    <div class="history-item">
                         <div class="history-expression">{{ item.expression }}</div>
                         <div class="history-result">= {{ item.result }}</div>
+                        <div class="history-actions">
+                            <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression }}', true)">Usar Expressão</button>
+                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result }}', false)">Usar Resultado</button>
+                        </div>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -93,6 +97,8 @@
                 
                 <!-- Sétima linha -->
                 <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('conjugate(')">Conj</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('norm(')">|q|</button>
                 <button type="submit" class="btn operator">=</button>
             </div>
         </form>

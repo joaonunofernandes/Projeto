@@ -19,7 +19,7 @@ body {
   box-shadow: 0px 0px 20px 0px #000; /* Adiciona uma sombra para criar profundidade */
   text-align: center; /* Centraliza o texto dentro da calculadora */
   position: relative; /* Define um contexto de posicionamento para elementos filhos */
-  transform: scale(0.9); /* Aplica uma escala de 0.9 à calculadora */
+  transform: scale(0.7); /* Aplica uma escala de 0.9 à calculadora */
 }
 
 h1 {
@@ -68,7 +68,7 @@ h1 {
 .buttons {
   /* Configurações para organizar os botões */
   display: grid; /* Usa o layout em grelha para organizar os botões */
-  grid-template-columns: repeat(10, 1fr); /* Cria 10 colunas de largura igual */
+  grid-template-columns: repeat(4, 1fr); /* Cria 10 colunas de largura igual */
   gap: 12px; /* Adiciona espaço entre os botões */
 }
 
