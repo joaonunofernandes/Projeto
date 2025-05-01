@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Linguagem Principal: inglês -->
+<!-- Define a linguagem principal da página como inglês -->
 <head>
     <meta charset="UTF-8">
-    <!-- Permite carateres especiais -->
+    <!-- Define o conjunto de carateres como UTF-8 para suportar carateres especiais -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Garante que a página se adapta a diferentes tamanhos de ecrã -->
-    <title>Quaternion Calculator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_quaternion_coquaternion.css') }}">
-    <!-- Incluir o arquivo JavaScript externo -->
+    <!-- Garante que a página é responsiva e se adapta a diferentes tamanhos de ecrã -->
+    <title>Calculadora de Quaterniões</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Inclui o ficheiro CSS externo para estilizar a página -->
     <script src="{{ url_for('static', filename='calculator.js') }}"></script>
+    <!-- Inclui o ficheiro JavaScript externo para funcionalidades da calculadora -->
 </head>
 <body>
     <div class="calculator">
+        <!-- Menu dropdown para navegação entre diferentes tipos de calculadoras -->
         <div class="dropdown" id="mainDropdown">
             <button class="dropbtn" id="dropdownButton">☰ Menu</button>
-                <div class="dropdown-content" id="dropdownContent">
-                    <a href="/">Reais e Complexos</a>
-                    <a href="/quaternions">Quaterniões</a>
-                    <a href="/coquaternions">Coquaterniões</a>
-                </div>
+            <div class="dropdown-content" id="dropdownContent">
+                <a href="/">Reais e Complexos</a>
+                <a href="/quaternions">Quaterniões</a>
+                <a href="/coquaternions">Coquaterniões</a>
             </div>
-        <!-- Botão de histórico -->
+        </div>
+
+        <!-- Botão para abrir o painel de histórico -->
         <div class="history-btn">
             <button type="button" class="btn-history" id="historyButton">
                 <span>📋</span> Histórico
             </button>
         </div>
         
-        <!-- Painel de histórico -->
+        <!-- Painel de histórico de cálculos -->
         <div class="history-panel" id="historyPanel">
             <div class="history-header">
                 <h3>Histórico de Cálculos</h3>
                 <button class="history-close" id="closeHistoryBtn">&times;</button>
             </div>
             <div class="history-items">
+                <!-- Mostra os itens do histórico se existirem -->
                 {% if history %}
                     {% for item in history %}
                     <div class="history-item">
@@ -47,59 +51,82 @@
                     </div>
                     {% endfor %}
                 {% else %}
+                    <!-- Mensagem caso o histórico esteja vazio -->
                     <div class="history-empty">Sem histórico de cálculos</div>
                 {% endif %}
             </div>
             <div class="history-footer">
+                <!-- Link para limpar o histórico -->
                 <a href="{{ url_for('clear_history', calculator_type='quaternion') }}" class="clear-history">Limpar Histórico</a>
             </div>
         </div>
-        
+
+        <!-- Título da calculadora -->
         <h1>Calculadora de Quaterniões</h1>
         <form method="POST">
+            <!-- Campo de entrada para mostrar a expressão e o resultado -->
             <input type="text" name="expression" id="display" value="{{ result }}" readonly>
+            <!-- readonly impede o utilizador de escrever diretamente no campo -->
             <div class="buttons">
-                <!-- Primeira linha -->
+                <!-- Primeira linha de botões -->
+                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
+                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
+                <button type="button" class="btn" onclick="appendToDisplay('')"></button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('normalize(')">Norm</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sqrt(')">√</button>
                 <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
-                <button type="button" class="btn special" onclick="backspaceDisplay()">⌫</button>
+                <button type="button" class="btn operator" onclick="backspaceDisplay()">⌫</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
-    
-                <!-- Segunda linha -->
+                <button type="button" class="btn operator" onclick="appendToDisplay('/')">/</button>
+                
+                <!-- Segunda linha de botões (adaptado para quaterniões) -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('asinh(')">asinh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sinh(')">sinh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('asin(')">asin</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sin(')">sin</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('inverse(')"><sup>1</sup>/<sub>q</sub></button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('**2')">x²</button>
                 <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
                 <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
                 <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
-    
-                <!-- Terceira linha -->
+                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
+                
+                <!-- Terceira linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('acosh(')">acosh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('cosh(')">cosh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('acos(')">acos</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('cos(')">cos</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('ln(')">ln</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
                 <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
                 <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
                 <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
-    
-                <!-- Quarta linha -->
+                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
+                
+                <!-- Quarta linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('atanh(')">atanh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('tanh(')">tanh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('atan(')">atan</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('tan(')">tan</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('exp(')">exp</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('j')">j</button>
                 <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
                 <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
                 <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
-                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
-    
-                <!-- Quinta linha -->
-                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
-                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
-                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
-    
-                <!-- Sexta linha - Botões específicos para quaterniões -->
-                <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
-                <button type="button" class="btn special" onclick="appendToDisplay('j')">j</button>
-                <button type="button" class="btn special" onclick="appendToDisplay('k')">k</button>
-                <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
                 
-                <!-- Sétima linha -->
-                <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
+                <!-- Quinta linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('real(')">Real</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('vectorial(')">Vect</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('arg(')">Arg</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('conjugate(')">Conj</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('norm(')">|q|</button>
-                <button type="submit" class="btn operator">=</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('k')">k</button>
+                <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
+                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
+                <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
+                <button type="submit" class="btn operator submit">=</button>
             </div>
         </form>
     </div>

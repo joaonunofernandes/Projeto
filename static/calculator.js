@@ -1,4 +1,19 @@
 // Funções da calculadora - Conjunto de funções para manipular a calculadora interativa
+//
+// EXPLICAÇÃO DO PROBLEMA E DA SOLUÇÃO MELHORADA:
+//
+// Problema identificado:
+// Quando um resultado é apresentado e o utilizador utiliza o teclado para introduzir um novo valor,
+// o cursor não é posicionado corretamente. Especificamente, quando se digita um número após
+// um resultado, o cursor fica posicionado antes do número introduzido, em vez de após o número.
+//
+// A solução anterior não funcionou completamente porque o navegador estava a posicionar o cursor
+// incorretamente antes que pudéssemos intervir com o evento 'input'.
+//
+// Solução melhorada implementada:
+// 1. Bloqueamos completamente a entrada direta de teclado no campo, definindo-o novamente como "readonly"
+// 2. Capturamos todos os eventos de teclado e os processamos manualmente através da nossa lógica
+// 3. Implementamos uma verificação e correção adicional do posicionamento do cursor
 
 // Variável global para controlar (indicador) se o ecrã está a mostrar um resultado dos cálculos
 // Permite comportamentos diferentes dependendo se o que está no ecrã é um resultado ou uma entrada do utilizador
@@ -317,150 +332,161 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Configurar o campo de introdução para permitir posicionamento do cursor
+    // SOLUÇÃO MELHORADA: Configuração do campo de visualização
     const display = document.getElementById('display');
-    // Obtém o elemento do campo de introdução
     
     if (display && display.value && !display.value.includes('Erro')) {
-        // Verifica se o campo existe, tem algum valor e não contém 'Erro'
-        
-        // Se tiver valor e não for erro, considera como resultado
+        // Se o campo já tiver um valor que não é uma mensagem de erro,
+        // considera esse valor como um resultado
         resultDisplayed = true;
-        // Se o campo já contiver um valor ao carregar a página (e não for uma mensagem de erro), 
-        // considera-o como um resultado existente
     }
     
     if (display) {
-        // Verifica se o campo existe
+        // ALTERAÇÃO IMPORTANTE: Mantém o campo somente leitura
+        // Esta é a chave da solução - previne completamente entradas diretas do teclado
+        // que estavam a causar problemas de posicionamento do cursor
+        display.setAttribute('readonly', 'true');
         
-        // Torna o campo manipulável mas bloqueia entrada direta
-        display.removeAttribute('readonly');
-        // Remove o atributo "readonly" para permitir que o cursor seja posicionado
+        // Garante que o campo ainda pode receber foco
+        display.tabIndex = 0;
         
-        // Permitir teclas de navegação e retrocesso
+        // Trata as teclas de navegação diretamente
         display.addEventListener('keydown', function(e) {
-            // Previne a ação padrão para praticamente todas as teclas
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
-                e.key === 'Home' || e.key === 'End' || 
-                e.key === 'Delete') {
-                // Permite teclas de navegação padrão funcionar normalmente
+            // Sempre previne a ação padrão para garantir que temos controlo total
+            e.preventDefault();
+            
+            // Navegação com teclas de seta
+            if (e.key === 'ArrowLeft') {
+                moveCursorLeft();
+                return;
+            }
+            if (e.key === 'ArrowRight') {
+                moveCursorRight();
+                return;
+            }
+            if (e.key === 'Home') {
+                display.setSelectionRange(0, 0);
+                return;
+            }
+            if (e.key === 'End') {
+                display.setSelectionRange(display.value.length, display.value.length);
                 return;
             }
             
-            // Para outras teclas, previne comportamento padrão e implementa nosso próprio
-            e.preventDefault();
-            
-            // Lida com tecla backspace
+            // Tecla backspace
             if (e.key === 'Backspace') {
                 backspaceDisplay();
                 return;
             }
             
-            // Lida com tecla Enter para enviar o formulário
+            // Tecla Delete
+            if (e.key === 'Delete') {
+                // Simula uma função de delete (removendo o caractere à direita do cursor)
+                const cursorPos = display.selectionStart;
+                if (cursorPos < display.value.length) {
+                    display.value = display.value.substring(0, cursorPos) + 
+                                   display.value.substring(cursorPos + 1);
+                    display.setSelectionRange(cursorPos, cursorPos);
+                }
+                return;
+            }
+            
+            // Tecla Escape limpa o display
+            if (e.key === 'Escape') {
+                clearDisplay();
+                return;
+            }
+            
+            // Tecla Enter submete o formulário
             if (e.key === 'Enter') {
                 submitForm();
                 return;
             }
             
-            // Mapeamento de teclas para funções da calculadora            
+            // Para todas as outras teclas, usa a nossa função processadora
             handleKeyboardInput(e.key);
         });
         
-        // Adiciona o evento de teclado global para permitir entrada mesmo quando o display não tem foco
-        document.addEventListener('keydown', function(e) {
-            // Se o display não estiver em foco, mas o foco estiver em outro lugar da página
-            if (document.activeElement !== display && 
-                !e.ctrlKey && !e.altKey && !e.metaKey) {
-                
-                // Previne comportamento padrão para teclas que representamos
-                if (isCalculatorKey(e.key)) {
-                    e.preventDefault();
-                    
-                    // Dá foco ao display
-                    display.focus();
-                    
-                    // Lida com tecla backspace
-                    if (e.key === 'Backspace') {
-                        backspaceDisplay();
-                        return;
-                    }
-                    
-                    // Lida com tecla Escape para limpar o display
-                    if (e.key === 'Escape') {
-                        clearDisplay();
-                        return;
-                    }
-                    
-                    // Lida com tecla Enter para enviar o formulário
-                    if (e.key === 'Enter') {
-                        submitForm();
-                        return;
-                    }
-                    
-                    // Mapeamento de teclas para funções da calculadora
-                    handleKeyboardInput(e.key);
-                }
-            }
-        });
-        
-        // Restaurar a posição do cursor quando o campo recebe foco
-        display.addEventListener('focus', function() {
-            // Adiciona detetor de eventos para quando o campo recebe foco
-            
-            // Mantém a posição atual do cursor ou posiciona no fim se não houver posição definida
-            if (this.selectionStart !== undefined) {
-                // Verifica se a propriedade selectionStart existe e está definida
-                const pos = this.selectionStart; // Guarda a posição atual
-                
-                setTimeout(() => {
-                    // Usa setTimeout para executar após o comportamento predefinido do navegador
-                    this.setSelectionRange(pos, pos);
-                    // Restaura a posição do cursor
-                }, 0);
-                // O setTimeout com 0ms coloca esta função na fila de tarefas do navegador
-                // para ser executada logo após o processamento do evento de foco
-                
-                // Problema: Quando um campo recebe foco, alguns navegadores reposicionam
-                // automaticamente o cursor (geralmente no final do texto)
-                // Solução: O setTimeout coloca a nossa função na fila de tarefas para ser executada
-                // após qualquer manipulação predefinida do cursor pelo navegador
-            }
-        });
-        
-        // Permitir clique para posicionar o cursor
-        display.addEventListener('mouseup', function() {
-            // O navegador já posiciona o cursor automaticamente quando o utilizador clica
-            // Este detetor está aqui para possíveis funcionamentos adicionais futuros
+        // Eventos de clique do rato para posicionar o cursor
+        display.addEventListener('click', function() {
+            // Não faz nada especial, permite o posicionamento normal do cursor
         });
     }
+    
+    // Adiciona evento de teclado global para capturar teclas mesmo quando o display não tem foco
+    document.addEventListener('keydown', function(e) {
+        // Se o display não tiver foco mas estivermos na página da calculadora
+        if (display && document.activeElement !== display && 
+            !e.ctrlKey && !e.altKey && !e.metaKey) {
+            
+            // Verifica se a tecla é relevante para a calculadora
+            if (isCalculatorKey(e.key)) {
+                e.preventDefault(); // Previne a ação padrão 
+                
+                // Dá foco ao display primeiro
+                display.focus();
+                
+                // Processa a tecla conforme sua função
+                if (e.key === 'Escape') {
+                    clearDisplay();
+                    return;
+                }
+                
+                if (e.key === 'Backspace') {
+                    backspaceDisplay();
+                    return;
+                }
+                
+                if (e.key === 'Enter' || e.key === '=') {
+                    submitForm();
+                    return;
+                }
+                
+                // Usa o processador normal para outras teclas
+                handleKeyboardInput(e.key);
+            }
+        }
+    });
 });
 
-// Verifica se a tecla pressionada deve ser processada pela calculadora
+// SOLUÇÃO MELHORADA: Função de verificação mais abrangente
 function isCalculatorKey(key) {
+    // Lista completa de teclas que a calculadora deve processar
     const validKeys = [
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
         '+', '-', '*', '/', '.',
         '(', ')', 
         'e', 'i', 'j', 'k', 'p',
-        'Enter', 'Backspace', 'Escape',
-        'ArrowLeft', 'ArrowRight'
+        'Enter', 'Backspace', 'Escape', 'Delete',
+        'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'π', '×', '÷', ',', '=',
+        's', 'c', 't', 'l'
     ];
     
-    return validKeys.includes(key) || 
-           key === 'π' || 
-           key === '×' || 
-           key === '÷' ||
-           key === ',' ||  // Para usuários que usam vírgula como decimal
-           key === '=' ||
-           key === 's' ||
-           key === 'c' ||
-           key === 't' ||
-           key === 'l';
+    return validKeys.includes(key);
 }
 
 // Função para lidar com entrada de teclado
 function handleKeyboardInput(key) {
-    // Mapeamento básico de teclas para funções da calculadora
+    // SOLUÇÃO MELHORADA: Implementação mais robusta para teclas numéricas
+    // Obtém o elemento de display uma única vez para eficiência
+    const display = document.getElementById('display');
+    
+    // Verifica se a tecla é um dígito
+    const isDigit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(key);
+    
+    // Trata especificamente o caso de um dígito após um resultado
+    if (isDigit && resultDisplayed) {
+        // Substitui o resultado por este dígito
+        display.value = key;
+        // Posiciona o cursor após o dígito (posição 1)
+        display.setSelectionRange(1, 1);
+        // Marca como não mais exibindo um resultado
+        resultDisplayed = false;
+        return;
+    }
+    
+    // Mapeamento de teclas para funções da calculadora
     switch(key) {
         // Números e operadores básicos
         case '0': case '1': case '2': case '3': case '4':
@@ -531,6 +557,19 @@ function handleKeyboardInput(key) {
         case 'l':
             appendToDisplay('log(');
             break;
+    }
+    
+    // VERIFICAÇÃO ADICIONAL: garante que o cursor sempre será posicionado corretamente
+    // Isso funciona como uma rede de segurança para qualquer cenário não previsto
+    if (display && resultDisplayed === false) {
+        // Se não estamos exibindo um resultado, o cursor deve estar numa posição válida
+        const cursorPos = display.selectionStart;
+        // Verifica se a posição está fora dos limites por algum motivo
+        if (cursorPos === null || cursorPos === undefined || 
+            cursorPos < 0 || cursorPos > display.value.length) {
+            // Posiciona no final como forma de garantir uma posição válida
+            display.setSelectionRange(display.value.length, display.value.length);
+        }
     }
 }
 

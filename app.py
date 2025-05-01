@@ -3,6 +3,8 @@ import re
 import numpy as np
 import os
 import math
+from hypercomplex import Quaternion, parse_quaternion_expr
+
 
 # O sistema de "session" (ver import) do Flask foi projetado especificamente para este propósito: 
 # manter dados isolados entre diferentes utilizadores enquanto mantém persistência para um mesmo utilizador.
@@ -207,13 +209,15 @@ def quaternions():
         try:
             # Obtém a expressão matemática submetida pelo utilizador
             expression = request.form["expression"]
-            # Avalia a expressão diretamente utilizando eval()
-            # Nota: O uso de eval() pode apresentar riscos de segurança em ambiente de produção
-            result = eval(expression)
+            
+            # Avalia a expressão usando a função de parse de quaterniões
+            computed = parse_quaternion_expr(expression)
+            
+            # Converte o resultado para string
+            result = str(computed)
             
             # Adiciona o cálculo ao histórico de quaterniões
-            # Cria um registo contendo a expressão e o resultado
-            history_entry = {'expression': expression, 'result': str(result)}
+            history_entry = {'expression': expression, 'result': result}
             history = session['quaternion_history']
             history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
@@ -280,3 +284,6 @@ if __name__ == "__main__":
     # O modo debug permite recarregar automaticamente quando há alterações no código
     # Facilita o desenvolvimento pois não é necessário reiniciar manualmente o servidor
     app.run(debug=True)
+
+
+# Quando usamos o teclado o cursos não fica no sitio certo ao voltar a escrever após um resultado
