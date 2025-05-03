@@ -286,4 +286,4 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
-# Quando usamos o teclado o cursos não fica no sitio certo ao voltar a escrever após um resultado
+# Perguntar aos professores se preferem que o resultado apareça com ou sem espaços.

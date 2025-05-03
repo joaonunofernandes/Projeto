@@ -12,7 +12,7 @@ class Quaternion:
     """
     Classe que representa um quaternião q = a + bi + cj + dk
     onde a, b, c, d são números reais e i, j, k são unidades imaginárias
-    
+
     Regras de multiplicação:
     i² = j² = k² = ijk = -1
     ij = k, ji = -k
@@ -23,7 +23,7 @@ class Quaternion:
     def __init__(self, a=0, b=0, c=0, d=0):
         """
         Inicializa um quaternião com componentes a, b, c, d
-        
+
         Args:
             a (float): Parte real (escalar)
             b (float): Coeficiente de i
@@ -39,85 +39,112 @@ class Quaternion:
     def from_string(cls, s):
         """
         Cria um quaternião a partir de uma string
-        
+
         Args:
             s (str): String representando o quaternião (ex: "1 + 2i + 3j + 4k")
-            
+
         Returns:
             Quaternion: Objeto quaternião
         """
         # Inicializa os componentes
         a, b, c, d = 0, 0, 0, 0
-        
+
         # Trata o caso de string vazia
         if not s or s.isspace():
             return cls(0, 0, 0, 0)
-            
+
         # Trata o caso de um número simples (apenas escalar)
         try:
-            if '+' not in s and '-' not in s[1:] and 'i' not in s and 'j' not in s and 'k' not in s:
-                return cls(float(s), 0, 0, 0)
-        except (ValueError, IndexError):
-            pass
-            
-        # Remove espaços e substitui - por +-
+            # Verifica se contém apenas dígitos, ponto decimal opcional, e sinal opcional no início
+            if re.fullmatch(r'-?\d+(\.\d+)?', s.strip()):
+                return cls(float(s.strip()), 0, 0, 0)
+        except (ValueError, TypeError):
+            pass # Continua se não for um número simples
+
+        # Remove espaços e substitui - por +- para facilitar split
         s = s.replace(' ', '').replace('-', '+-')
         if s.startswith('+'):
             s = s[1:]
-            
-        # Separa os termos
-        parts = s.split('+')
-        
+        elif s.startswith('-'): # Garante que o sinal negativo inicial é tratado corretamente
+            pass # Não faz nada, o split tratará disso
+        elif not s.startswith('+') and s[0] not in 'ijk' and s[0].isdigit():
+            # Adiciona um '+' no início se começar com um número sem sinal
+            # (exceto se for só 'i', 'j', 'k')
+            # Isto ajuda a separar corretamente o primeiro termo real
+            pass # A lógica de split atual deve lidar com isto
+
+        # Separa os termos por '+'
+        # Usar lookbehind para não separar em expoentes como 'e+10' se necessário
+        parts = re.split(r'(?<!e)\+', s) # Divide por '+' a menos que precedido por 'e'
+
         for part in parts:
-            if not part:  # Ignora termos vazios
+            if not part:  # Ignora termos vazios (resultantes de múltiplos sinais, ex: ++ ou +-)
                 continue
-                
+
+            # Trata o sinal negativo remanescente do replace '-' -> '+-'
+            is_negative = part.startswith('-')
+            if is_negative:
+                part = part[1:] # Remove o sinal '-' para processar o resto
+
+            val = 1.0 # Valor padrão do coeficiente se for apenas 'i', 'j', 'k'
+
             # Verifica se tem unidade imaginária
             if 'i' in part:
                 if part == 'i':
-                    b = 1
-                elif part == '-i':
-                    b = -1
+                    pass # val já é 1
                 else:
-                    b = float(part.replace('i', ''))
+                    try:
+                        val = float(part.replace('i', ''))
+                    except ValueError:
+                        raise ValueError(f"Componente inválido para i: '{part}'")
+                b += -val if is_negative else val
             elif 'j' in part:
                 if part == 'j':
-                    c = 1
-                elif part == '-j':
-                    c = -1
+                    pass # val já é 1
                 else:
-                    c = float(part.replace('j', ''))
+                    try:
+                        val = float(part.replace('j', ''))
+                    except ValueError:
+                        raise ValueError(f"Componente inválido para j: '{part}'")
+                c += -val if is_negative else val
             elif 'k' in part:
                 if part == 'k':
-                    d = 1
-                elif part == '-k':
-                    d = -1
+                    pass # val já é 1
                 else:
-                    d = float(part.replace('k', ''))
+                    try:
+                        val = float(part.replace('k', ''))
+                    except ValueError:
+                        raise ValueError(f"Componente inválido para k: '{part}'")
+                d += -val if is_negative else val
             else:
                 # É a parte real
                 try:
-                    a = float(part)
+                    val = float(part)
+                    a += -val if is_negative else val
                 except ValueError:
-                    # Ignora partes que não podem ser convertidas para float
-                    pass
-                
+                    # Ignora partes que não podem ser convertidas (pode acontecer com erros de input)
+                    # Ou levanta um erro mais específico
+                    raise ValueError(f"Componente real inválido: '{part}'")
+
         return cls(a, b, c, d)
-    
+
     def __add__(self, other):
         """
         Soma dois quaterniões
-        
+
         Args:
-            other (Quaternion): Outro quaternião
-            
+            other (Quaternion ou escalar): Outro quaternião ou número real/complexo
+
         Returns:
             Quaternion: Resultado da soma
         """
         if isinstance(other, (int, float)):
-            # Soma com escalar
+            # Soma com escalar real
             return Quaternion(self.a + other, self.b, self.c, self.d)
-        else:
+        elif isinstance(other, complex):
+            # Soma com escalar complexo (afeta a e b)
+            return Quaternion(self.a + other.real, self.b + other.imag, self.c, self.d)
+        elif isinstance(other, Quaternion):
             # Soma componente a componente
             return Quaternion(
                 self.a + other.a,
@@ -125,25 +152,31 @@ class Quaternion:
                 self.c + other.c,
                 self.d + other.d
             )
+        else:
+            return NotImplemented # Indica que a operação não é suportada para este tipo
 
     def __radd__(self, other):
-        """Soma à direita com escalar"""
+        """Soma à direita (other + self)"""
+        # A adição é comutativa, mas chamamos __add__ para reutilizar a lógica
         return self.__add__(other)
-    
+
     def __sub__(self, other):
         """
-        Subtração de quaterniões
-        
+        Subtração de quaterniões (self - other)
+
         Args:
-            other (Quaternion): Outro quaternião
-            
+            other (Quaternion ou escalar): Outro quaternião ou número real/complexo
+
         Returns:
             Quaternion: Resultado da subtração
         """
         if isinstance(other, (int, float)):
-            # Subtração com escalar
+            # Subtração com escalar real
             return Quaternion(self.a - other, self.b, self.c, self.d)
-        else:
+        elif isinstance(other, complex):
+            # Subtração com escalar complexo
+            return Quaternion(self.a - other.real, self.b - other.imag, self.c, self.d)
+        elif isinstance(other, Quaternion):
             # Subtração componente a componente
             return Quaternion(
                 self.a - other.a,
@@ -151,140 +184,318 @@ class Quaternion:
                 self.c - other.c,
                 self.d - other.d
             )
-        
+        else:
+            return NotImplemented
+
     def __rsub__(self, other):
-        """Subtração à direita com escalar"""
-        return Quaternion(other - self.a, -self.b, -self.c, -self.d)
-    
+        """Subtração à direita (other - self)"""
+        # q_result = other - self = -(self - other)
+        if isinstance(other, (int, float, complex, Quaternion)):
+            result = self.__sub__(other) # Calcula self - other
+            return result * -1 # Multiplica por -1 para obter other - self
+        else:
+            return NotImplemented
+
     def __mul__(self, other):
         """
-        Multiplicação de quaterniões
-        
+        Multiplicação de quaterniões (self * other)
+
         Args:
-            other (Quaternion ou escalar): Outro quaternião ou número escalar
-            
+            other (Quaternion ou escalar): Outro quaternião ou número escalar (real/complexo)
+
         Returns:
             Quaternion: Resultado da multiplicação
         """
         if isinstance(other, (int, float)):
-            # Multiplicação por escalar
+            # Multiplicação por escalar real
             return Quaternion(
                 self.a * other,
                 self.b * other,
                 self.c * other,
                 self.d * other
             )
-        else:
+        elif isinstance(other, complex):
+             # Multiplicação por complexo c = x + yi é tratada como q * (x + yi)
+             # q * (x + yi + 0j + 0k)
+            other_q = Quaternion(other.real, other.imag, 0, 0)
+            return self.__mul__(other_q) # Reutiliza a multiplicação de quaterniões
+        elif isinstance(other, Quaternion):
             # Multiplicação de quaterniões usando a regra de Hamilton
-            a = self.a * other.a - self.b * other.b - self.c * other.c - self.d * other.d
-            b = self.a * other.b + self.b * other.a + self.c * other.d - self.d * other.c
-            c = self.a * other.c - self.b * other.d + self.c * other.a + self.d * other.b
-            d = self.a * other.d + self.b * other.c - self.c * other.b + self.d * other.a
-            
+            a1, b1, c1, d1 = self.a, self.b, self.c, self.d
+            a2, b2, c2, d2 = other.a, other.b, other.c, other.d
+
+            a = a1*a2 - b1*b2 - c1*c2 - d1*d2
+            b = a1*b2 + b1*a2 + c1*d2 - d1*c2
+            c = a1*c2 - b1*d2 + c1*a2 + d1*b2
+            d = a1*d2 + b1*c2 - c1*b2 + d1*a2
+
             return Quaternion(a, b, c, d)
-        
+        else:
+            return NotImplemented
+
     def __rmul__(self, other):
-        """Multiplicação à direita com escalar"""
+        """Multiplicação à direita (other * self)"""
         if isinstance(other, (int, float)):
-            return Quaternion(
-                self.a * other,
-                self.b * other,
-                self.c * other,
-                self.d * other
-            )
+            # Escalar * self é o mesmo que self * escalar
+            return self.__mul__(other)
+        elif isinstance(other, complex):
+            # Complexo * self: (x + yi) * q
+            other_q = Quaternion(other.real, other.imag, 0, 0)
+            # A multiplicação não é comutativa, calculamos other_q * self
+            return other_q.__mul__(self)
+        # Se other for Quaternion, __mul__ já foi tentado.
+        # Se chegou aqui e other não é escalar/complexo, não é suportado.
         return NotImplemented
-    
+
     def __truediv__(self, other):
         """
-        Divisão de quaterniões
-        
+        Divisão à esquerda (self / other), ou seja, self * other^-1.
+
         Args:
-            other (Quaternion ou escalar): Outro quaternião ou número escalar
-            
+            other (Quaternion ou escalar): O divisor.
+
         Returns:
-            Quaternion: Resultado da divisão
+            Quaternion: Resultado da divisão self * other.inverse().
         """
         if isinstance(other, (int, float)):
-            # Divisão por escalar
             if other == 0:
-                raise ZeroDivisionError("Divisão por zero")
-            
-            return Quaternion(
-                self.a / other,
-                self.b / other,
-                self.c / other,
-                self.d / other
-            )
+                raise ZeroDivisionError("Divisão de quaternião por escalar zero")
+            return self * (1.0 / other)
+        elif isinstance(other, complex):
+            if other == 0:
+                raise ZeroDivisionError("Divisão de quaternião por complexo zero")
+            other_q = Quaternion(other.real, other.imag, 0, 0)
+            return self * other_q.inverse() # self * other^-1
+        elif isinstance(other, Quaternion):
+            # inverse() já trata other == 0
+            return self * other.inverse() # self * other^-1
         else:
-            # Divisão por quaternião: q1 / q2 = q1 * (q2^-1)
-            return self * other.inverse()
-        
+            return NotImplemented
+
     def __rtruediv__(self, other):
-        """Divisão à direita por escalar"""
+        """
+        Divisão à direita por self (other / self), ou seja, other * self^-1.
+
+        Args:
+            other (Quaternion ou escalar): O dividendo.
+
+        Returns:
+            Quaternion: Resultado da divisão other * self.inverse().
+        """
         if isinstance(other, (int, float)):
-            # other / self = other * (self^-1)
+            # other * self.inverse()
             return other * self.inverse()
+        elif isinstance(other, complex):
+            # other * self.inverse()
+            other_q = Quaternion(other.real, other.imag, 0, 0)
+            return other_q * self.inverse()
+        # Se 'other' for um Quaternion, __truediv__ já foi tentado no outro objeto.
         return NotImplemented
-    
+
+    def right_divide_by(self, other):
+        """
+        Calcula a divisão à direita de self por other: other^-1 * self.
+        Isto corresponde à solução x para a equação: other * x = self.
+
+        Args:
+            other (Quaternion ou escalar): O quaternião pelo qual dividir (fica à esquerda na multiplicação).
+
+        Returns:
+            Quaternion: O resultado de other.inverse() * self.
+        """
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Divisão à direita por escalar zero")
+            # other^-1 * self = (1/other) * self
+            inv_other = 1.0 / other
+            # Usamos __rmul__ de self implicitamente: inv_other * self
+            return inv_other * self
+        elif isinstance(other, complex):
+            if other == 0:
+                raise ZeroDivisionError("Divisão à direita por complexo zero")
+            # other^-1 * self
+            other_q = Quaternion(other.real, other.imag, 0, 0)
+            # inverse() trata other_q == 0
+            return other_q.inverse() * self
+        elif isinstance(other, Quaternion):
+            # other^-1 * self
+            # inverse() trata other == 0
+            return other.inverse() * self
+        else:
+            return NotImplemented
+
+
+    def __pow__(self, exponent):
+        """
+        Potenciação do quaternião (self ** exponent)
+
+        Args:
+            exponent (int): O expoente (atualmente suporta apenas 2)
+
+        Returns:
+            Quaternion: Resultado da potenciação
+
+        Raises:
+            TypeError: Se o expoente não for um inteiro.
+            ValueError: Se o expoente inteiro não for 2 (por agora).
+        """
+        if not isinstance(exponent, int):
+            raise TypeError("Expoente para potenciação de quaternião deve ser inteiro.")
+
+        if exponent == 2:
+            return self * self # q^2 = q * q
+        elif exponent == 0:
+            return Quaternion(1, 0, 0, 0)
+        elif exponent == 1:
+            return self
+        elif exponent < 0:
+            # q^-n = (q^-1)^n
+            if exponent == -1:
+                return self.inverse()
+            else:
+                # Implementação mais geral (poderia ser otimizada com exp. por quadratura)
+                inv = self.inverse()
+                res = Quaternion(1, 0, 0, 0)
+                for _ in range(abs(exponent)):
+                       res = res * inv
+                return res
+        else: # exponent > 2
+            # Implementação mais geral (poderia ser otimizada com exp. por quadratura)
+            res = Quaternion(1, 0, 0, 0)
+            temp = self
+            n = exponent
+            # Exponenciação por quadratura (binária)
+            while n > 0:
+                if n % 2 == 1: # Se o bit atual é 1
+                     res = res * temp
+                temp = temp * temp # Quadrado para o próximo bit
+                n //= 2 # Move para o próximo bit
+            return res
+            # raise ValueError("Potenciação de quaternião atualmente só suporta expoente 2.")
+
+
+    def sqrt(self):
+        """
+        Calcula a raiz quadrada principal do quaternião.
+
+        Retorna a raiz quadrada com a parte real não-negativa.
+        Trata casos especiais para q=0 e q sendo um número real negativo.
+
+        Returns:
+            Quaternion: A raiz quadrada principal de self.
+        """
+        norm_q = self.norm()
+        epsilon = 1e-15 # Uma pequena tolerância para comparações de ponto flutuante
+
+        # Caso 1: q = 0
+        if norm_q < epsilon:
+            return Quaternion(0, 0, 0, 0)
+
+        # Caso 2: q é um número real negativo (b=c=d=0, a < 0)
+        if abs(self.b) < epsilon and abs(self.c) < epsilon and abs(self.d) < epsilon and self.a < -epsilon:
+            # Infinitas raízes da forma sqrt(|a|) * (unit vector)
+            # Retornamos uma específica, por exemplo, usando i
+            return Quaternion(0, math.sqrt(-self.a), 0, 0)
+
+        # Caso 3: Geral
+        # Denominador da fórmula: sqrt(2 * (|q| + a))
+        denom = math.sqrt(2 * (norm_q + self.a))
+
+        # Evitar divisão por zero (embora teoricamente coberto pelo Caso 2)
+        if abs(denom) < epsilon:
+            # Isto pode acontecer se a = -|q|, que é o caso real negativo
+            # A lógica acima já deve ter tratado isso, mas por segurança:
+            if abs(self.b) < epsilon and abs(self.c) < epsilon and abs(self.d) < epsilon:
+                # É um real negativo ou zero
+                if self.a < -epsilon:
+                    return Quaternion(0, math.sqrt(-self.a), 0, 0) # Real negativo
+                else:
+                    return Quaternion(0,0,0,0) # Zero
+            else:
+                # Situação inesperada, talvez erro numérico?
+                # Poderia levantar um erro ou tentar uma abordagem numérica diferente.
+                # Por agora, retorna o caso real negativo como fallback mais próximo
+                # ou levanta um erro. Vamos levantar um erro.
+                raise ValueError("Divisão por zero inesperada no cálculo da raiz quadrada do quaternião.")
+
+
+        # Calcula os componentes da raiz com parte real positiva
+        sqrt_a = math.sqrt((norm_q + self.a) / 2)
+        mult = 1 / denom # Multiplicador para a parte vetorial = 1 / sqrt(2*(|q|+a))
+
+        sqrt_b = self.b * mult
+        sqrt_c = self.c * mult
+        sqrt_d = self.d * mult
+
+        return Quaternion(sqrt_a, sqrt_b, sqrt_c, sqrt_d)
+
+
     def conjugate(self):
         """
         Conjugado do quaternião: q* = a - bi - cj - dk
-        
+
         Returns:
             Quaternion: Conjugado do quaternião
         """
         return Quaternion(self.a, -self.b, -self.c, -self.d)
-    
+
     def norm_squared(self):
         """
         Norma ao quadrado: |q|^2 = a^2 + b^2 + c^2 + d^2
-        
+
         Returns:
             float: Norma ao quadrado
         """
         return self.a**2 + self.b**2 + self.c**2 + self.d**2
-    
+
     def norm(self):
         """
         Norma (magnitude): |q| = sqrt(a^2 + b^2 + c^2 + d^2)
-        
+
         Returns:
             float: Norma do quaternião
         """
-        return math.sqrt(self.norm_squared())
-    
+        norm_sq = self.norm_squared()
+        # Adicionar uma pequena verificação para evitar erro em math.sqrt para valores negativos muito pequenos devido a precisão
+        if norm_sq < 0 and abs(norm_sq) < 1e-15:
+            return 0.0
+        return math.sqrt(norm_sq)
+
+
     def vectorial(self):
         """
         Parte vetorial do quaternião: bi + cj + dk
-        
+
         Returns:
             Quaternion: Parte vetorial do quaternião
         """
         return Quaternion(0, self.b, self.c, self.d)
-    
+
     def real(self):
         """
         Parte real do quaternião: a
-        
+
         Returns:
-            Quaternion: Parte real como quaternião
+            Quaternion: Parte real como quaternião (a + 0i + 0j + 0k)
         """
+        # Retorna um Quaternião para consistência, embora pudesse retornar só float
         return Quaternion(self.a, 0, 0, 0)
-    
+
     def inverse(self):
         """
         Inverso do quaternião: q^-1 = conj(q) / |q|^2
-        
+
         Returns:
             Quaternion: Inverso do quaternião
-        
+
         Raises:
-            ZeroDivisionError: Se o quaternião for nulo
+            ZeroDivisionError: Se o quaternião for nulo (|q|^2 == 0)
         """
         norm_sq = self.norm_squared()
-        if norm_sq == 0:
-            raise ZeroDivisionError("Inverso de quaternião nulo")
-            
+        epsilon = 1e-15 # Tolerância para zero
+        if abs(norm_sq) < epsilon:
+            raise ZeroDivisionError("Inverso de quaternião (aproximadamente) nulo")
+
         conj = self.conjugate()
         return Quaternion(
             conj.a / norm_sq,
@@ -292,229 +503,143 @@ class Quaternion:
             conj.c / norm_sq,
             conj.d / norm_sq
         )
-    
+
     def normalize(self):
         """
-        Normaliza o quaternião (magnitude 1)
-        
+        Normaliza o quaternião (torna-o unitário, com magnitude 1)
+
         Returns:
             Quaternion: Quaternião normalizado
-            
+
         Raises:
-            ZeroDivisionError: Se o quaternião for nulo
+            ZeroDivisionError: Se o quaternião for (aproximadamente) nulo
         """
         norm = self.norm()
-        if norm == 0:
-            raise ZeroDivisionError("Normalização de quaternião nulo")
-            
+        epsilon = 1e-15 # Tolerância para zero
+        if abs(norm) < epsilon:
+            raise ZeroDivisionError("Normalização de quaternião (aproximadamente) nulo")
+
         return Quaternion(
             self.a / norm,
             self.b / norm,
             self.c / norm,
             self.d / norm
         )
-    
+
     def __str__(self):
         """
-        Representação em string do quaternião
-        
-        Returns:
-            str: Representação do quaternião no formato "a + bi + cj + dk"
+        Representação em string do quaternião de forma mais legível.
+        Formato: a + bi + cj + dk, omitindo termos nulos e simplificando coeficientes 1.
         """
-        result = []
-        
-        # Adiciona a parte real se não for zero ou se é o único componente
-        if self.a != 0 or (self.b == 0 and self.c == 0 and self.d == 0):
-            result.append(f"{self.a}")
-        
-        # Adiciona o termo i
-        if self.b != 0:
-            if self.b == 1:
-                result.append("i")
-            elif self.b == -1:
-                result.append("-i")
+        parts = []
+        epsilon = 1e-12 # Tolerância para considerar um float como zero
+
+        # Formatar com precisão limitada para evitar ".0" desnecessário e lidar com floats
+        def format_num(n):
+            # Se for muito próximo de um inteiro, mostra como inteiro
+            if abs(n - round(n)) < epsilon:
+                num_str = str(round(n))
             else:
-                result.append(f"{self.b}i")
-        
-        # Adiciona o termo j
-        if self.c != 0:
-            if self.c == 1:
-                result.append("j")
-            elif self.c == -1:
-                result.append("-j")
+                # Formata com casas decimais, removendo zeros e ponto final desnecessários
+                num_str = f"{n:.4f}".rstrip('0').rstrip('.')
+                # Caso especial: evitar resultado "-0"
+                if num_str == "-0":
+                    return "0"
+            return num_str
+
+        # Parte real
+        if abs(self.a) > epsilon or (abs(self.b) < epsilon and abs(self.c) < epsilon and abs(self.d) < epsilon):
+            parts.append(format_num(self.a))
+
+        # Parte i
+        if abs(self.b) > epsilon:
+            sign = "+" if self.b > 0 else "-"
+            val = abs(self.b)
+            term = ""
+            if abs(val - 1) < epsilon: # Coeficiente é 1 ou -1
+                term = "i"
             else:
-                result.append(f"{self.c}j")
-        
-        # Adiciona o termo k
-        if self.d != 0:
-            if self.d == 1:
-                result.append("k")
-            elif self.d == -1:
-                result.append("-k")
+                term = f"{format_num(val)}i"
+
+            if not parts: # Se for o primeiro termo
+                parts.append(f"{sign if sign == '-' else ''}{term}")
             else:
-                result.append(f"{self.d}k")
-        
-        # Junta os termos com sinal de adição
-        if not result:
+                # Adiciona sinal e espaço apenas se não for o primeiro termo
+                # ou se o sinal for negativo
+                parts.append(f"{sign} {term}")
+
+        # Parte j
+        if abs(self.c) > epsilon:
+            sign = "+" if self.c > 0 else "-"
+            val = abs(self.c)
+            term = ""
+            if abs(val - 1) < epsilon:
+                term = "j"
+            else:
+                term = f"{format_num(val)}j"
+
+            if not parts:
+                parts.append(f"{sign if sign == '-' else ''}{term}")
+            else:
+                parts.append(f"{sign} {term}")
+
+        # Parte k
+        if abs(self.d) > epsilon:
+            sign = "+" if self.d > 0 else "-"
+            val = abs(self.d)
+            term = ""
+            if abs(val - 1) < epsilon:
+                term = "k"
+            else:
+                term = f"{format_num(val)}k"
+
+            if not parts:
+                parts.append(f"{sign if sign == '-' else ''}{term}")
+            else:
+                parts.append(f"{sign} {term}")
+
+        if not parts:
             return "0"
-            
-        first = result[0]
-        rest = result[1:]
-        
-        # Substitui sinais negativos por subtração
-        processed_rest = []
-        for term in rest:
-            if term.startswith('-'):
-                processed_rest.append(f"- {term[1:]}")
-            else:
-                processed_rest.append(f"+ {term}")
-                
-        return first + ' ' + ' '.join(processed_rest)
-        # Isso cria uma representação mais legível como "a - b + c" em vez de "a + -b + c"
-    
+        else:
+            # Junta as partes, tratando o primeiro sinal '+' se existir
+            result = " ".join(parts)
+            if result.startswith('+ '):
+                return result[2:]
+            return result
+
+
     def __repr__(self):
-        """Representação detalhada do objeto"""
+        """Representação detalhada do objeto para debugging"""
         return f"Quaternion({self.a}, {self.b}, {self.c}, {self.d})"
 
+# Função de Parse (Atualizar safe_env)
 def parse_quaternion_expr(expression):
     """
-    Parse e avalia expressões com quaterniões, suportando expressões 
-    complexas com múltiplos níveis de operações básicas (sem exponenciação)
-    
+    Parse e avalia expressões com quaterniões, suportando operações básicas,
+    potenciação (**), raiz quadrada (sqrt), divisões (divL, divR) e funções específicas.
+
     Args:
         expression (str): Expressão a ser avaliada
-        
+
     Returns:
         Quaternion: Resultado da expressão
     """
 
-    # Verifica se a expressão usa funções como real(), vectorial(), etc.
-    func_pattern = r'(\w+)\((.*)\)'
-    match_func = re.match(func_pattern, expression.strip())
-    
-    if match_func:
-        func_name = match_func.group(1)
-        inner_expr = match_func.group(2)
-        
-        # Funções especiais que precisam de processamento especial
-        if func_name in ['real', 'vectorial', 'conjugate', 'norm']:
-            # Avalia primeiro a expressão interna como um quaternião
-            try:
-                # Tenta avaliar a expressão interna diretamente
-                inner_result = parse_quaternion_expr(inner_expr)
-            except Exception:
-                # Se falhar, tenta converter para um quaternião
-                try:
-                    inner_result = Quaternion.from_string(inner_expr)
-                except Exception as e:
-                    raise ValueError(f"Erro ao avaliar a expressão interna '{inner_expr}': {str(e)}")
-            
-            # Aplica a função apropriada ao resultado
-            if func_name == 'real':
-                return inner_result.real()
-            elif func_name == 'vectorial':
-                return inner_result.vectorial()
-            elif func_name == 'conjugate':
-                return inner_result.conjugate()
-            elif func_name == 'norm':
-                return Quaternion(inner_result.norm(), 0, 0, 0)
-    
-    # Substitui símbolos matemáticos por seus equivalentes em Python
+    # Remover a substituição de '÷' por '/' aqui, pois usaremos divL e divR
     expression = expression.replace('×', '*')
-    expression = expression.replace('÷', '/')
-    
-    # Pré-processamento: verifica se a expressão já contém uma construção de Quaternion explícita
-    if re.search(r'Quaternion\s*\(', expression):
-        # Se já contém, não aplicamos as substituições para evitar conflitos
-        pass
-    else:
-        # Primeiro, preserva expressões com parênteses para não interferir com o próximo passo
-        # Extrai todos os grupos de parênteses, incluindo aninhados, de forma recursiva
-        def extract_parens(expr):
-            # Encontra o parêntese de abertura mais à esquerda
-            open_idx = expr.find('(')
-            if open_idx == -1:
-                return expr, []  # Sem parênteses, retorna a expressão original
-            
-            # Contador para acompanhar parênteses aninhados
-            parens_count = 1
-            close_idx = open_idx + 1
-            
-            # Encontra o parêntese de fechamento correspondente
-            while close_idx < len(expr) and parens_count > 0:
-                if expr[close_idx] == '(':
-                    parens_count += 1
-                elif expr[close_idx] == ')':
-                    parens_count -= 1
-                close_idx += 1
-                
-            if parens_count > 0:
-                # Parênteses não balanceados, retorna a expressão original
-                return expr, []
-                
-            # Extrai o grupo completo incluindo parênteses
-            close_idx -= 1  # Ajusta para o índice correto do parêntese de fechamento
-            paren_group = expr[open_idx:close_idx+1]
-            
-            # Substitui o grupo por um placeholder
-            placeholder = f"__PAREN_{len(extracted_groups)}__"
-            processed_expr = expr[:open_idx] + placeholder + expr[close_idx+1:]
-            
-            # Adiciona o grupo à lista
-            extracted_groups.append(paren_group)
-            
-            # Continua processando recursivamente
-            return extract_parens(processed_expr)
-        
-        # Lista para armazenar os grupos extraídos
-        extracted_groups = []
-        
-        # Extrai todos os grupos de parênteses recursivamente
-        processed_expr, _ = extract_parens(expression)
-        while processed_expr != expression:
-            expression = processed_expr
-            processed_expr, _ = extract_parens(expression)
-        
-        # Processamento em duas fases:
-        # Fase 1: Substitui unidades i, j, k fora dos parênteses
-        # Esta parte lida com expressões como "2*i + j"
-        expr_without_parens = expression
-        for i, group in enumerate(extracted_groups):
-            expr_without_parens = expr_without_parens.replace(f"__PAREN_{i}__", "")
-            
-        # Substitui i, j, k isolados na parte sem parênteses
-        expr_without_parens = re.sub(r'(\d+)i', r'Quaternion(0, \1, 0, 0)', expr_without_parens)
-        expr_without_parens = re.sub(r'(\d+)j', r'Quaternion(0, 0, \1, 0)', expr_without_parens)
-        expr_without_parens = re.sub(r'(\d+)k', r'Quaternion(0, 0, 0, \1)', expr_without_parens)
-        expr_without_parens = re.sub(r'(?<![a-zA-Z0-9_])i(?![a-zA-Z0-9_])', r'Quaternion(0, 1, 0, 0)', expr_without_parens)
-        expr_without_parens = re.sub(r'(?<![a-zA-Z0-9_])j(?![a-zA-Z0-9_])', r'Quaternion(0, 0, 1, 0)', expr_without_parens)
-        expr_without_parens = re.sub(r'(?<![a-zA-Z0-9_])k(?![a-zA-Z0-9_])', r'Quaternion(0, 0, 0, 1)', expr_without_parens)
-        
-        # Fase 2: Processa os grupos entre parênteses
-        # Alguns grupos podem ter quaterniões, outros são apenas operações aritméticas
-        processed_groups = []
-        
-        for group in extracted_groups:
-            # Remove os parênteses para processar o conteúdo
-            content = group[1:-1]
-            
-            # Verifica se o conteúdo contém i, j ou k (indicadores de quaterniões)
-            if re.search(r'[ijk]', content):
-                # Substitui padrões quaterniões
-                content = re.sub(r'(\d+)i', r'Quaternion(0, \1, 0, 0)', content)
-                content = re.sub(r'(\d+)j', r'Quaternion(0, 0, \1, 0)', content)
-                content = re.sub(r'(\d+)k', r'Quaternion(0, 0, 0, \1)', content)
-                content = re.sub(r'(?<![a-zA-Z0-9_])i(?![a-zA-Z0-9_])', r'Quaternion(0, 1, 0, 0)', content)
-                content = re.sub(r'(?<![a-zA-Z0-9_])j(?![a-zA-Z0-9_])', r'Quaternion(0, 0, 1, 0)', content)
-                content = re.sub(r'(?<![a-zA-Z0-9_])k(?![a-zA-Z0-9_])', r'Quaternion(0, 0, 0, 1)', content)
-            
-            # Adiciona o conteúdo processado com parênteses
-            processed_groups.append('(' + content + ')')
-        
-        # Reconstrói a expressão substituindo os placeholders pelos grupos processados
-        for i, group in enumerate(processed_groups):
-            expression = expression.replace(f"__PAREN_{i}__", group)
-    
+    # expression = expression.replace('÷', '/') # REMOVIDO
+    expression = expression.replace('^', '**') # Suporte para ^ como potência
+
+    # Tratamento de funções como sqrt(arg), divL(arg1, arg2), divR(arg1, arg2), etc.
+    # Não precisamos mais da lógica específica de match_func aqui,
+    # pois o eval com safe_env tratará as funções diretamente.
+
+    # Substitui i, j, k isolados (não como parte de nomes tipo 'sin')
+    # Usando limites de palavra (\b) para evitar substituições indesejadas
+    expression = re.sub(r'\bi\b', 'Quaternion(0,1,0,0)', expression)
+    expression = re.sub(r'\bj\b', 'Quaternion(0,0,1,0)', expression)
+    expression = re.sub(r'\bk\b', 'Quaternion(0,0,0,1)', expression)
+
     # Cria um ambiente seguro para avaliar a expressão
     # Adiciona as classes e funções necessárias
     safe_env = {
@@ -522,34 +647,60 @@ def parse_quaternion_expr(expression):
         'math': math,
         'pi': math.pi,
         'e': math.e,
-        're': re,
-        'conjugate': lambda q: q.conjugate(),
-        'norm': lambda q: q.norm(),
-        'vectorial': lambda q: q.vectorial(),
-        'real': lambda q: q.real()
+        # Funções específicas de Quaterniões (lambda para garantir que chamam o método do objeto)
+        'conjugate': lambda q: q.conjugate() if isinstance(q, Quaternion) else Quaternion(q).conjugate(),
+        'norm': lambda q: q.norm() if isinstance(q, Quaternion) else abs(q), # Norm de número é abs
+        'vectorial': lambda q: q.vectorial() if isinstance(q, Quaternion) else Quaternion(0,0,0,0),
+        'real': lambda q: q.real() if isinstance(q, Quaternion) else Quaternion(q),
+        'sqrt': lambda q: q.sqrt() if isinstance(q, Quaternion) else math.sqrt(q), # Sqrt de número usa math.sqrt
+        'inverse': lambda q: q.inverse() if isinstance(q, Quaternion) else 1.0/q, # Inverso
+        'normalize': lambda q: q.normalize() if isinstance(q, Quaternion) else (q/abs(q) if q != 0 else 0), # Normalização
+        # divL(q, p) -> q / p -> q * p^-1
+        'divL': lambda q, p: q / p, # Usa o __truediv__ da classe Quaternion
+        # divR(q, p) -> p^-1 * q
+        # O método right_divide_by(self, other) calcula other.inverse() * self
+        # Portanto, para calcular p^-1 * q, precisamos chamar q.right_divide_by(p)
+        'divR': lambda q, p: q.right_divide_by(p),
     }
-    
+
     try:
-        # Tenta avaliar a expressão
+        # Avaliar a expressão no ambiente seguro
+        # Usar eval é um risco de segurança se a expressão vier de fontes não confiáveis.
+        # Aqui, assumimos que vem da interface da calculadora.
         result = eval(expression, {"__builtins__": {}}, safe_env)
         # O parâmetro {"__builtins__": {}} bloqueia acesso às funções built-in do Python por segurança
-        
-        # Verifica se o resultado é um quaternião
-        if not isinstance(result, Quaternion):
-            # Converte para quaternião se for um número
-            if isinstance(result, (int, float, complex)):
-                if isinstance(result, complex):
-                    return Quaternion(result.real, result.imag, 0, 0)
-                else:
-                    return Quaternion(result)
-            else:
-                raise ValueError(f"Resultado deve ser um quaternião")
-        
-        return result
+
+        # Verifica se o resultado é um quaternião ou um número (resultante de norm, etc.)
+        if isinstance(result, Quaternion):
+            return result
+        elif isinstance(result, (int, float)):
+            # Se for um número real, retorna como um quaternião real
+            return Quaternion(result)
+        elif isinstance(result, complex):
+            # Se for complexo, retorna como quaternião com c=d=0
+            return Quaternion(result.real, result.imag)
+        else:
+            # Tenta converter outros tipos numéricos (como numpy floats)
+            try:
+                return Quaternion(float(result))
+            except (TypeError, ValueError):
+                raise ValueError(f"Resultado da expressão é de tipo não suportado: {type(result)}")
+
     except Exception as e:
-        # Se ocorrer um erro, tenta interpretar a expressão como um quaternião diretamente
+        # Se ocorrer um erro na avaliação, pode ser que a expressão original
+        # fosse apenas a representação de um quaternião (ex: "1+2i").
+        # Tentamos fazer o parse direto.
+        original_expression = expression # Guardar a original antes das substituições de i,j,k
+        original_expression = original_expression.replace('Quaternion(0,1,0,0)','i') # Reverter para parse
+        original_expression = original_expression.replace('Quaternion(0,0,1,0)','j')
+        original_expression = original_expression.replace('Quaternion(0,0,0,1)','k')
         try:
-            return Quaternion.from_string(expression)
-        except:
-            # Se isso também falhar, propaga o erro original
-            raise ValueError(f"Erro ao avaliar expressão: {str(e)}")
+            # Tenta parsear a string original (antes das substituições i->Quaternion)
+            return Quaternion.from_string(original_expression)
+        except Exception as e_parse:
+            # Se o parse direto também falhar, propaga o erro original da avaliação
+            # ou uma combinação de ambos.
+            # Melhora a mensagem de erro para incluir a causa original
+            import traceback
+            tb_str = traceback.format_exc()
+            raise ValueError(f"Erro ao avaliar expressão '{original_expression}'.\nDetalhe: {str(e)}\nParser alternativo falhou: {str(e_parse)}\nTraceback: {tb_str}")
