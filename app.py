@@ -286,4 +286,6 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
-# Perguntar aos professores se preferem que o resultado apareça com ou sem espaços.
+# Perguntar aos professores se preferem que o resultado apareça com ou sem espaços
+# sqrt(2)i se deve ficar como sqrt(2)*i
+# Perguntar sobre a "," e o sitio dela

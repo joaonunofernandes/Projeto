@@ -65,8 +65,8 @@ class Quaternion:
         s = s.replace(' ', '').replace('-', '+-')
         if s.startswith('+'):
             s = s[1:]
-        elif s.startswith('-'): # Garante que o sinal negativo inicial é tratado corretamente
-            pass # Não faz nada, o split tratará disso
+        elif s.startswith('+-'): # Garante que o sinal negativo inicial é tratado corretamente
+            s = '-' + s[2:] # Mantém o sinal negativo inicial
         elif not s.startswith('+') and s[0] not in 'ijk' and s[0].isdigit():
             # Adiciona um '+' no início se começar com um número sem sinal
             # (exceto se for só 'i', 'j', 'k')
@@ -94,7 +94,13 @@ class Quaternion:
                     pass # val já é 1
                 else:
                     try:
-                        val = float(part.replace('i', ''))
+                        # Tratamento para frações como "3/5i"
+                        if '/' in part:
+                            num_part = part.replace('i', '')
+                            num, denom = num_part.split('/')
+                            val = float(num) / float(denom)
+                        else:
+                            val = float(part.replace('i', ''))
                     except ValueError:
                         raise ValueError(f"Componente inválido para i: '{part}'")
                 b += -val if is_negative else val
@@ -103,7 +109,13 @@ class Quaternion:
                     pass # val já é 1
                 else:
                     try:
-                        val = float(part.replace('j', ''))
+                        # Tratamento para frações como "3/5j"
+                        if '/' in part:
+                            num_part = part.replace('j', '')
+                            num, denom = num_part.split('/')
+                            val = float(num) / float(denom)
+                        else:
+                            val = float(part.replace('j', ''))
                     except ValueError:
                         raise ValueError(f"Componente inválido para j: '{part}'")
                 c += -val if is_negative else val
@@ -112,14 +124,25 @@ class Quaternion:
                     pass # val já é 1
                 else:
                     try:
-                        val = float(part.replace('k', ''))
+                        # Tratamento para frações como "3/5k"
+                        if '/' in part:
+                            num_part = part.replace('k', '')
+                            num, denom = num_part.split('/')
+                            val = float(num) / float(denom)
+                        else:
+                            val = float(part.replace('k', ''))
                     except ValueError:
                         raise ValueError(f"Componente inválido para k: '{part}'")
                 d += -val if is_negative else val
             else:
                 # É a parte real
                 try:
-                    val = float(part)
+                    # Tratamento para frações como "3/5"
+                    if '/' in part:
+                        num, denom = part.split('/')
+                        val = float(num) / float(denom)
+                    else:
+                        val = float(part)
                     a += -val if is_negative else val
                 except ValueError:
                     # Ignora partes que não podem ser convertidas (pode acontecer com erros de input)
@@ -249,13 +272,14 @@ class Quaternion:
 
     def __truediv__(self, other):
         """
-        Divisão à esquerda (self / other), ou seja, self * other^-1.
+        Divisão à Direita (DivR): self / other. Calcula self * other^-1.
+        Este é o comportamento padrão para o operador '/'.
 
         Args:
-            other (Quaternion ou escalar): O divisor.
+            other (Quaternião ou escalar): O divisor (q1).
 
-        Returns:
-            Quaternion: Resultado da divisão self * other.inverse().
+        Retorna:
+            Quaternião: Resultado da divisão à direita self * other.inverse() (q2 * q1^-1).
         """
         if isinstance(other, (int, float)):
             if other == 0:
@@ -274,13 +298,14 @@ class Quaternion:
 
     def __rtruediv__(self, other):
         """
-        Divisão à direita por self (other / self), ou seja, other * self^-1.
+        Divisão à Direita (DivR) por self: other / self. Calcula other * self^-1.
+        Chamado quando o operando esquerdo não suporta __truediv__ com Quaternião.
 
         Args:
-            other (Quaternion ou escalar): O dividendo.
+            other (escalar ou complexo): O dividendo (q2).
 
-        Returns:
-            Quaternion: Resultado da divisão other * self.inverse().
+        Retorna:
+            Quaternião: Resultado da divisão à direita other * self.inverse() (q2 * q1^-1).
         """
         if isinstance(other, (int, float)):
             # other * self.inverse()
@@ -292,17 +317,18 @@ class Quaternion:
         # Se 'other' for um Quaternion, __truediv__ já foi tentado no outro objeto.
         return NotImplemented
 
-    def right_divide_by(self, other):
+    def left_division(self, other):
         """
-        Calcula a divisão à direita de self por other: other^-1 * self.
-        Isto corresponde à solução x para a equação: other * x = self.
+        Divisão à Esquerda (DivL) de self por other: other^-1 * self.
+        Calcula o resultado 'x' para a equação: other * x = self.
 
         Args:
-            other (Quaternion ou escalar): O quaternião pelo qual dividir (fica à esquerda na multiplicação).
+            other (Quaternião ou escalar): O divisor (q1), que multiplica pela esquerda na equação other * x = self.
 
-        Returns:
-            Quaternion: O resultado de other.inverse() * self.
+        Retorna:
+            Quaternião: O resultado da divisão à esquerda other.inverse() * self (q1^-1 * q2).
         """
+
         if isinstance(other, (int, float)):
             if other == 0:
                 raise ZeroDivisionError("Divisão à direita por escalar zero")
@@ -629,6 +655,24 @@ def parse_quaternion_expr(expression):
     expression = expression.replace('×', '*')
     # expression = expression.replace('÷', '/') # REMOVIDO
     expression = expression.replace('^', '**') # Suporte para ^ como potência
+    
+    # Substitui símbolos de raiz quadrada pelo equivalente sqrt
+    expression = re.sub(r'√(\d+)', r'sqrt(\1)', expression)
+    expression = re.sub(r'√\(([^)]+)\)', r'sqrt(\1)', expression)
+    
+    # Conversão do formato 2i para 2*i (ou similares)
+    expression = re.sub(r'(\d+)([ijk])(?!\w)', r'\1*\2', expression)
+    
+    # Conversão do formato i2 para i*2 (ou similares)
+    expression = re.sub(r'([ijk])(\d+)(?!\w)', r'\1*\2', expression)
+    
+    # Conversão do formato func(...)i para func(...)*i (ou qualquer letra seguida de i,j,k)
+    # Primeiro captura a expressão até um parêntese fechado, seguido de i,j,k
+    expression = re.sub(r'(\w+\([^()]*(?:\([^()]*\)[^()]*)*\))([ijk])(?!\w)', r'\1*\2', expression)
+    #expression = re.sub(r'(\w+\([^()]*(?:\([^()]*\)[^()]*)*\))([ijk])(?!\w)', r'\1*\2', expression)
+    
+    # Captura casos onde temos letras como variáveis e constantes (ex: pi, e) seguidas de i,j,k
+    expression = re.sub(r'([a-zA-Z_][a-zA-Z0-9_]*)([ijk])(?!\w)', r'\1*\2', expression)
 
     # Tratamento de funções como sqrt(arg), divL(arg1, arg2), divR(arg1, arg2), etc.
     # Não precisamos mais da lógica específica de match_func aqui,
@@ -655,18 +699,69 @@ def parse_quaternion_expr(expression):
         'sqrt': lambda q: q.sqrt() if isinstance(q, Quaternion) else math.sqrt(q), # Sqrt de número usa math.sqrt
         'inverse': lambda q: q.inverse() if isinstance(q, Quaternion) else 1.0/q, # Inverso
         'normalize': lambda q: q.normalize() if isinstance(q, Quaternion) else (q/abs(q) if q != 0 else 0), # Normalização
-        # divL(q, p) -> q / p -> q * p^-1
-        'divL': lambda q, p: q / p, # Usa o __truediv__ da classe Quaternion
-        # divR(q, p) -> p^-1 * q
-        # O método right_divide_by(self, other) calcula other.inverse() * self
-        # Portanto, para calcular p^-1 * q, precisamos chamar q.right_divide_by(p)
-        'divR': lambda q, p: q.right_divide_by(p),
+        # divL(q, p) representa a Divisão à Esquerda: p^-1 * q
+        # IMPORTANTE: Agora convertendo automaticamente escalares para Quaternion
+        'divL': lambda q, p: (Quaternion(q) if not isinstance(q, Quaternion) else q).left_division(
+                            Quaternion(p) if not isinstance(p, Quaternion) else p),
+        # divR(q, p) representa a Divisão à Direita: q * p^-1
+        # IMPORTANTE: Agora convertendo automaticamente escalares para Quaternion
+        'divR': lambda q, p: (Quaternion(q) if not isinstance(q, Quaternion) else q) / 
+                            (Quaternion(p) if not isinstance(p, Quaternion) else p),
+        # Adicionando suporte ao operador negativo unário para Quaternion
+        'neg': lambda q: Quaternion(-q.a, -q.b, -q.c, -q.d) if isinstance(q, Quaternion) else -q,
     }
 
     try:
         # Avaliar a expressão no ambiente seguro
         # Usar eval é um risco de segurança se a expressão vier de fontes não confiáveis.
         # Aqui, assumimos que vem da interface da calculadora.
+        
+        # Tratamento especial para operador de negação unária (-) aplicado a funções ou quaterniões
+        # Substitui padrões como "-sqrt(...)" por "neg(sqrt(...))"
+        
+        # Primeiro, protege operações normais como "a-b" substituindo temporariamente
+        # Substitui operadores binários por marcadores especiais
+        expression = re.sub(r'(\w|\)|\d)\s*-\s*', r'\1 __MINUS__ ', expression)
+        
+        # Agora substitui as negações unárias
+        neg_pattern = r'-(\w+\(.*?\))'
+        while re.search(neg_pattern, expression):
+            expression = re.sub(neg_pattern, r'neg(\1)', expression)
+        
+        # Também trata casos como "-i", "-j", "-k" e "-2" diretamente
+        expression = re.sub(r'-([ijk])\b', r'neg(\1)', expression)
+        expression = re.sub(r'(?<![a-zA-Z0-9_])-(\d+(\.\d+)?)', r'neg(\1)', expression)
+        
+        # Restaura os operadores binários
+        expression = expression.replace('__MINUS__', '-')
+
+        # Tratamento especial para negação de funções divL/divR
+        neg_func_pattern = r'-\s*(divL|divR)\s*\('
+        if re.search(neg_func_pattern, expression):
+            # Precisamos garantir que há um operador antes e depois da substituição
+            # Substitui "-divL(" por " - neg(divL(" para garantir espaço para operador
+            expression = re.sub(neg_func_pattern, r' - neg(\1(', expression)
+            
+            # Encontrar todas as ocorrências do padrão e processar cada uma
+            for match in re.finditer(r'neg\((divL|divR)\(', expression):
+                start_pos = match.end() - 1  # Posição do último parêntese aberto
+                count = 1  # Contagem de parênteses (começamos com 1 aberto)
+                close_pos = start_pos
+                
+                # Procurar o parêntese de fechamento correspondente
+                for i in range(start_pos + 1, len(expression)):
+                    if expression[i] == '(':
+                        count += 1
+                    elif expression[i] == ')':
+                        count -= 1
+                        if count == 0:
+                            close_pos = i
+                            break
+                        
+                # Inserir o parêntese extra de fechamento após o parêntese correspondente
+                if close_pos < len(expression) and count == 0:
+                    expression = expression[:close_pos+1] + ')' + expression[close_pos+1:]
+        
         result = eval(expression, {"__builtins__": {}}, safe_env)
         # O parâmetro {"__builtins__": {}} bloqueia acesso às funções built-in do Python por segurança
 
