@@ -11,9 +11,10 @@
 // incorretamente antes que pudéssemos intervir com o evento 'input'.
 //
 // Solução melhorada implementada:
-// 1. Bloqueamos completamente a entrada direta de teclado no campo, definindo-o novamente como "readonly"
-// 2. Capturamos todos os eventos de teclado e os processamos manualmente através da nossa lógica
-// 3. Implementamos uma verificação e correção adicional do posicionamento do cursor
+// 1. Tornamos o cursor visível removendo o atributo readonly e utilizando CSS específico
+// 2. Prevenimos a entrada direta utilizando o evento beforeinput
+// 3. Adicionamos estilos visuais para tornar o cursor mais visível
+// 4. Garantimos que o cursor é corretamente posicionado em todas as operações
 
 // Variável global para controlar (indicador) se o ecrã está a mostrar um resultado dos cálculos
 // Permite comportamentos diferentes dependendo se o que está no ecrã é um resultado ou uma entrada do utilizador
@@ -58,8 +59,21 @@ function appendToDisplay(value) {
         // Repõe o estado para não ser mais considerado como resultado
         resultDisplayed = false;
         
+        // Remove qualquer valor original armazenado quando o utilizador começa uma nova expressão
+        // ADICIONADO - Para lidar com valores originais
+        const form = document.querySelector('form');
+        let hiddenInput = document.getElementById('originalValueInput');
+        if (hiddenInput) {
+            hiddenInput.parentNode.removeChild(hiddenInput);
+        }
+        
         // Mantém o foco no campo de introdução para permitir operações adicionais de teclado
         display.focus();
+        
+        // Armazena a posição atual do cursor num atributo de dados para recuperação posterior
+        // NOVO - Para garantir que o cursor permaneça visível e corretamente posicionado
+        display.setAttribute('data-cursor-pos', display.selectionStart);
+        
         return; // Termina a execução da função aqui se estivermos a lidar com um resultado
     }
     
@@ -94,18 +108,35 @@ function appendToDisplay(value) {
     // Mantém o foco no campo de introdução
     display.focus();
     // Garante que o utilizador pode continuar a digitar sem precisar de clicar novamente no campo
+    
+    // Armazena a posição atual do cursor num atributo de dados para recuperação posterior
+    // NOVO - Para manter registo da posição do cursor entre operações
+    display.setAttribute('data-cursor-pos', display.selectionStart);
 }
 
 // clearDisplay : Apaga todo o conteúdo do campo de introdução (ecrã)
 function clearDisplay() {
-    document.getElementById('display').value = '';
+    const display = document.getElementById('display');
+    display.value = '';
     // Define o valor do campo de introdução como uma string vazia, apagando todo o conteúdo
     
-    document.getElementById('display').focus();
+    display.focus();
     // Mantém o foco no campo de introdução após limpá-lo
     
     resultDisplayed = false; // Repõe o estado do indicador de resultado
     // Como o ecrã foi limpo, já não está a mostrar um resultado
+    
+    // Remove qualquer valor original armazenado quando o utilizador limpa a tela
+    // ADICIONADO - Para lidar com valores originais
+    const form = document.querySelector('form');
+    let hiddenInput = document.getElementById('originalValueInput');
+    if (hiddenInput) {
+        hiddenInput.parentNode.removeChild(hiddenInput);
+    }
+    
+    // Redefine a posição do cursor para o início (0)
+    // NOVO - Para garantir o correto posicionamento do cursor após limpar o ecrã
+    display.setAttribute('data-cursor-pos', 0);
 }
 
 // backspaceDisplay : Remove o carácter à esquerda do cursor
@@ -140,6 +171,10 @@ function backspaceDisplay() {
     
     // Mantém o foco no campo de introdução
     display.focus();
+    
+    // Atualiza a posição do cursor no atributo de dados
+    // NOVO - Para manter registo da posição do cursor entre operações
+    display.setAttribute('data-cursor-pos', newCursorPos);
 }
 
 // moveCursorLeft : Move o cursor uma posição para a esquerda
@@ -153,8 +188,13 @@ function moveCursorLeft() {
     // Não faz nada se o cursor já estiver no início
     if (cursorPos > 0) {
         // Verifica se a posição é maior que zero (não está no início)
-        display.setSelectionRange(cursorPos - 1, cursorPos - 1);
+        const newPos = cursorPos - 1;
+        display.setSelectionRange(newPos, newPos);
         // Move o cursor uma posição para a esquerda
+        
+        // Atualiza a posição do cursor no atributo de dados
+        // NOVO - Para manter registo da posição do cursor
+        display.setAttribute('data-cursor-pos', newPos);
     }
     
     display.focus();
@@ -175,8 +215,13 @@ function moveCursorRight() {
     // Não faz nada se o cursor já estiver no fim
     if (cursorPos < maxPos) {
         // Verifica se a posição é menor que a posição máxima (não está no fim)
-        display.setSelectionRange(cursorPos + 1, cursorPos + 1);
+        const newPos = cursorPos + 1;
+        display.setSelectionRange(newPos, newPos);
         // Move o cursor uma posição para a direita
+        
+        // Atualiza a posição do cursor no atributo de dados
+        // NOVO - Para manter registo da posição do cursor
+        display.setAttribute('data-cursor-pos', newPos);
     }
     
     display.focus();
@@ -190,6 +235,21 @@ function submitForm() {
         // Indica que após a submissão, o valor apresentado será um resultado
         setTimeout(function() {
             resultDisplayed = true;
+            
+            // NOVO - Coloca o cursor no final do resultado após a submissão
+            const display = document.getElementById('display');
+            if (display) {
+                // Utiliza um pequeno atraso para garantir que o resultado já está no display
+                setTimeout(function() {
+                    // Posiciona o cursor no final do texto
+                    const finalPos = display.value.length;
+                    display.focus();
+                    display.setSelectionRange(finalPos, finalPos);
+                    
+                    // Armazena a posição final no atributo data
+                    display.setAttribute('data-cursor-pos', finalPos);
+                }, 100); // Ajustar este delay se necessário
+            }
         }, 10);
         
         form.submit();
@@ -250,8 +310,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Usa setTimeout para garantir que esta ação ocorre após o processamento do formulário
                 resultDisplayed = true;
                 // Define a variável global como verdadeira, indicando que o ecrã mostra um resultado
+            // NOVO - Posiciona o cursor no final do resultado após receber resposta
+                const display = document.getElementById('display');
+                if (display) {
+                    // Utiliza um delay maior para garantir que o resultado já foi processado
+                    setTimeout(function() {
+                        const finalPos = display.value.length;
+                        display.focus();
+                        display.setSelectionRange(finalPos, finalPos);
+                        display.setAttribute('data-cursor-pos', finalPos);
+                    }, 300); // Delay maior para lidar com o tempo de resposta do servidor
+                }
             }, 10);
-            // Pequeno atraso de 10ms para garantir a execução após o processamento do formulário
         });
     }
 
@@ -332,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // SOLUÇÃO MELHORADA: Configuração do campo de visualização
+    // SOLUÇÃO MELHORADA: Configuração do campo de visualização para cursor visível
     const display = document.getElementById('display');
     
     if (display && display.value && !display.value.includes('Erro')) {
@@ -342,20 +412,75 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (display) {
-        // ALTERAÇÃO IMPORTANTE: Mantém o campo somente leitura
-        // Esta é a chave da solução - previne completamente entradas diretas do teclado
-        // que estavam a causar problemas de posicionamento do cursor
-        display.setAttribute('readonly', 'true');
+        // NOVA IMPLEMENTAÇÃO: Tornando o cursor visível
         
-        // Garante que o campo ainda pode receber foco
-        display.tabIndex = 0;
+        // 1. Removemos o atributo readonly para permitir que o cursor seja visível
+        display.removeAttribute('readonly');
         
-        // Trata as teclas de navegação diretamente
+        // 2. Adicionamos uma classe CSS específica para garantir visibilidade do cursor
+        display.classList.add('cursor-visible');
+        
+        // 3. Prevenimos entradas diretas de teclado através do evento beforeinput
+        display.addEventListener('beforeinput', function(e) {
+            e.preventDefault(); // Bloqueia a entrada direta mas permite visualização do cursor
+        });
+        
+        // 4. Garantimos que o display mantém o foco e o cursor é posicionado corretamente
+        display.addEventListener('blur', function() {
+            // Pequeno atraso para evitar conflitos com outros cliques
+            setTimeout(function() {
+                // Retorna o foco se o utilizador não estiver interagindo com elementos de entrada
+                if (document.activeElement === document.body || 
+                    (document.activeElement && document.activeElement.tagName !== 'BUTTON' && 
+                     document.activeElement.tagName !== 'INPUT' && 
+                     document.activeElement.tagName !== 'SELECT')) {
+                    
+                    display.focus();
+                    
+                    // Restaurar a posição do cursor a partir do atributo data-cursor-pos
+                    const savedPos = parseInt(display.getAttribute('data-cursor-pos') || '0');
+                    const maxPos = display.value.length;
+                    // Garantir que a posição está dentro dos limites
+                    const validPos = Math.min(Math.max(0, savedPos), maxPos);
+                    
+                    display.setSelectionRange(validPos, validPos);
+                }
+            }, 10);
+        });
+        
+        // 5. Armazenar a posição do cursor após cada clique ou movimento
+        display.addEventListener('click', function() {
+            display.setAttribute('data-cursor-pos', display.selectionStart);
+        });
+        
+        // 6. Efeito de piscar para tornar o cursor mais visível
+        let cursorBlinkInterval;
+        
+        display.addEventListener('focus', function() {
+            // Cancelar qualquer intervalo existente
+            if (cursorBlinkInterval) clearInterval(cursorBlinkInterval);
+            
+            // Adicionar classe que destaca o cursor quando ativo
+            display.classList.add('cursor-active');
+            
+            // Criar efeito de piscar para o cursor
+            cursorBlinkInterval = setInterval(function() {
+                display.classList.toggle('cursor-blink');
+            }, 500); // Alterna a cada 500ms (meio segundo)
+        });
+        
+        display.addEventListener('blur', function() {
+            // Limpar o intervalo quando o campo perde o foco
+            if (cursorBlinkInterval) clearInterval(cursorBlinkInterval);
+            display.classList.remove('cursor-active', 'cursor-blink');
+        });
+        
+        // 7. Tratar eventos de teclado
         display.addEventListener('keydown', function(e) {
-            // Sempre previne a ação padrão para garantir que temos controlo total
+            // Prevenir o comportamento padrão para controlar manualmente
             e.preventDefault();
             
-            // Navegação com teclas de seta
+            // Tratamento para teclas de navegação
             if (e.key === 'ArrowLeft') {
                 moveCursorLeft();
                 return;
@@ -366,14 +491,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (e.key === 'Home') {
                 display.setSelectionRange(0, 0);
+                display.setAttribute('data-cursor-pos', 0);
                 return;
             }
             if (e.key === 'End') {
-                display.setSelectionRange(display.value.length, display.value.length);
+                const endPos = display.value.length;
+                display.setSelectionRange(endPos, endPos);
+                display.setAttribute('data-cursor-pos', endPos);
                 return;
             }
             
-            // Tecla backspace
+            // Tecla Backspace
             if (e.key === 'Backspace') {
                 backspaceDisplay();
                 return;
@@ -387,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     display.value = display.value.substring(0, cursorPos) + 
                                    display.value.substring(cursorPos + 1);
                     display.setSelectionRange(cursorPos, cursorPos);
+                    display.setAttribute('data-cursor-pos', cursorPos);
                 }
                 return;
             }
@@ -407,10 +536,8 @@ document.addEventListener('DOMContentLoaded', function() {
             handleKeyboardInput(e.key);
         });
         
-        // Eventos de clique do rato para posicionar o cursor
-        display.addEventListener('click', function() {
-            // Não faz nada especial, permite o posicionamento normal do cursor
-        });
+        // Inicializar com foco para facilitar a utilização imediata
+        display.focus();
     }
     
     // Adiciona evento de teclado global para capturar teclas mesmo quando o display não tem foco
@@ -449,6 +576,48 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Função para adicionar estilos CSS necessários para o cursor visível
+function addCursorStyles() {
+    // Verifica se os estilos já foram adicionados
+    if (document.getElementById('cursor-styles')) return;
+    
+    // Cria um elemento de estilo
+    const style = document.createElement('style');
+    style.id = 'cursor-styles';
+    style.textContent = `
+        /* Estilos para garantir cursor visível */
+        .cursor-visible {
+            caret-color: #ff9500 !important; /* Cor laranja para o cursor */
+            cursor: text !important;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+        }
+        
+        /* Destacar o cursor quando ativo */
+        .cursor-active {
+            outline: 2px solid #ff9500 !important; /* Contorno para indicar foco */
+        }
+        
+        /* Efeito de piscar cursor */
+        .cursor-blink {
+            caret-color: transparent !important;
+        }
+        
+        /* Sobrescrever qualquer estilo que possa ocultar o cursor */
+        input[type="text"]:focus {
+            caret-color: #ff9500 !important;
+        }
+    `;
+    
+    // Adiciona os estilos ao cabeçalho do documento
+    document.head.appendChild(style);
+}
+
+// Executar a função para adicionar estilos assim que o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', addCursorStyles);
+
 // SOLUÇÃO MELHORADA: Função de verificação mais abrangente
 function isCalculatorKey(key) {
     // Lista completa de teclas que a calculadora deve processar
@@ -483,6 +652,8 @@ function handleKeyboardInput(key) {
         display.setSelectionRange(1, 1);
         // Marca como não mais exibindo um resultado
         resultDisplayed = false;
+        // Armazena a nova posição do cursor
+        display.setAttribute('data-cursor-pos', 1);
         return;
     }
     
@@ -539,6 +710,11 @@ function handleKeyboardInput(key) {
             
         // Igual
         case '=':
+            // Quando pressiona igual, armazena explicitamente que queremos o cursor no final
+            const display = document.getElementById('display');
+            if (display) {
+                display.setAttribute('data-cursor-end-after-submit', 'true');
+            }
             submitForm();
             break;
             
@@ -568,14 +744,54 @@ function handleKeyboardInput(key) {
         if (cursorPos === null || cursorPos === undefined || 
             cursorPos < 0 || cursorPos > display.value.length) {
             // Posiciona no final como forma de garantir uma posição válida
-            display.setSelectionRange(display.value.length, display.value.length);
+            const validPos = display.value.length;
+            display.setSelectionRange(validPos, validPos);
+            display.setAttribute('data-cursor-pos', validPos);
+        } else {
+            // Se a posição está válida, armazena-a
+            display.setAttribute('data-cursor-pos', cursorPos);
         }
     }
 }
 
+// FUNÇÃO MODIFICADA: useHistoryItem com suporte para valores originais
 // useHistoryItem : Utiliza um item do histórico na calculadora atual
-function useHistoryItem(value, isExpression) {
+function useHistoryItem(value, isExpression, originalData) {
     const display = document.getElementById('display');
+    
+    // Se há dados originais e estamos usando o resultado (não a expressão),
+    // armazenamos também os dados originais como um atributo data no display
+    if (originalData && !isExpression) {
+        // Armazenar os dados originais como um atributo no elemento de display
+        // Isso permite que o backend acesse esses dados quando o formulário for submetido
+        display.setAttribute('data-original-value', originalData);
+        
+        // Podemos também adicionar um campo hidden ao formulário para transportar os dados originais
+        const form = document.querySelector('form');
+        let hiddenInput = document.getElementById('originalValueInput');
+        
+        // Se o campo hidden não existir, criá-lo
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = 'originalValueInput';
+            hiddenInput.name = 'original_value';
+            form.appendChild(hiddenInput);
+        }
+        
+        // Definir o valor do campo hidden como os dados originais
+        hiddenInput.value = originalData;
+    } else if (isExpression) {
+        // Se estamos usando uma expressão, remover quaisquer dados originais armazenados
+        display.removeAttribute('data-original-value');
+        
+        // Remover também o campo hidden se existir
+        const hiddenInput = document.getElementById('originalValueInput');
+        if (hiddenInput) {
+            hiddenInput.parentNode.removeChild(hiddenInput);
+        }
+    }
+    
     // Coloca o valor selecionado no campo de introdução
     display.value = value;
     
@@ -584,10 +800,21 @@ function useHistoryItem(value, isExpression) {
     display.setSelectionRange(value.length, value.length);
     // Posiciona o cursor após o último carácter do valor
     
+    // Armazena a posição do cursor para recuperação posterior
+    // NOVO - Para manter registo da posição do cursor
+    display.setAttribute('data-cursor-pos', value.length);
+    
     // Define se o display está mostrando um resultado ou uma expressão
     // Se for expressão, mantemos resultDisplayed como false para permitir continuar a edição
     // Se for resultado, definimos como true para que o próximo número substitua o resultado
     resultDisplayed = !isExpression;
+    
+    // Adiciona uma classe temporária para destacar o cursor após usar um item do histórico
+    // NOVO - Para melhorar o feedback visual ao utilizador
+    display.classList.add('cursor-highlight');
+    setTimeout(function() {
+        display.classList.remove('cursor-highlight');
+    }, 1000); // Remove após 1 segundo
     
     // Fecha o painel de histórico
     const historyPanel = document.getElementById('historyPanel');
@@ -599,3 +826,185 @@ function useHistoryItem(value, isExpression) {
         // Esconde o painel removendo a classe 'show'
     }
 }
+
+// Evento para garantir que o cursor seja visível após a página ser carregada
+window.addEventListener('load', function() {
+    const display = document.getElementById('display');
+    if (display && display.value) {
+        // Se o campo já tiver um valor no carregamento da página (provavelmente um resultado)
+        resultDisplayed = true;
+        
+        // Posiciona o cursor no final desse valor
+        const finalPos = display.value.length;
+        
+        // Pequeno atraso para garantir que todos os outros manipuladores já foram executados
+        setTimeout(function() {
+            display.focus();
+            display.setSelectionRange(finalPos, finalPos);
+            display.setAttribute('data-cursor-pos', finalPos);
+        }, 300);
+    }
+});
+
+// Adiciona estilos específicos para o cursor destacado
+document.addEventListener('DOMContentLoaded', function() {
+    // SOLUÇÃO PARA O CURSOR VISÍVEL
+    const display = document.getElementById('display');
+    
+    if (display) {
+        // 1. Removemos o atributo readonly para permitir que o cursor seja visível
+        display.removeAttribute('readonly');
+        
+        // 2. Adicionamos uma classe CSS específica para garantir visibilidade do cursor
+        display.classList.add('cursor-visible');
+        
+        // 3. Prevenimos entradas diretas de teclado através do evento beforeinput
+        display.addEventListener('beforeinput', function(e) {
+            e.preventDefault(); // Bloqueia a entrada direta mas permite visualização do cursor
+        });
+        
+        // 4. Garantimos que o display mantém o foco e o cursor é posicionado corretamente
+        display.addEventListener('blur', function() {
+            // Pequeno atraso para evitar conflitos com outros cliques
+            setTimeout(function() {
+                // Retorna o foco se o utilizador não estiver interagindo com outros elementos
+                if (document.activeElement === document.body || 
+                    (document.activeElement && document.activeElement.tagName !== 'BUTTON')) {
+                    
+                    display.focus();
+                    
+                    // Restaurar a posição do cursor a partir do atributo data-cursor-pos
+                    const savedPos = parseInt(display.getAttribute('data-cursor-pos') || '0');
+                    const maxPos = display.value.length;
+                    // Garantir que a posição está dentro dos limites
+                    const validPos = Math.min(Math.max(0, savedPos), maxPos);
+                    
+                    display.setSelectionRange(validPos, validPos);
+                }
+            }, 10);
+        });
+        
+        // 5. Armazenar a posição do cursor após cada clique ou movimento
+        display.addEventListener('click', function() {
+            display.setAttribute('data-cursor-pos', display.selectionStart);
+        });
+        
+        // 6. Assegurar que o cursor fique no final após submissão do formulário
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                // Marca que queremos o cursor no final após obter o resultado
+                display.setAttribute('data-cursor-end-after-submit', 'true');
+                
+                // Depois de receber a resposta, posicionar o cursor no final
+                setTimeout(function() {
+                    const finalPos = display.value.length;
+                    display.focus();
+                    display.setSelectionRange(finalPos, finalPos);
+                    display.setAttribute('data-cursor-pos', finalPos);
+                }, 300);
+            });
+        }
+        
+        // 7. Garantir que eventos de teclado mantenham o cursor visível
+        display.addEventListener('keydown', function(e) {
+            const cursorPos = display.selectionStart;
+            display.setAttribute('data-cursor-pos', cursorPos);
+            
+            // Para a tecla Enter, marcar que o cursor deve ficar no final
+            if (e.key === 'Enter') {
+                display.setAttribute('data-cursor-end-after-submit', 'true');
+            }
+        });
+        
+        // 8. Adicionar manipulador para o botão de submissão (=)
+        const submitButtons = document.querySelectorAll('button[type="submit"], .submit');
+        if (submitButtons.length > 0) {
+            submitButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    // Marca que queremos o cursor no final após o resultado
+                    display.setAttribute('data-cursor-end-after-submit', 'true');
+                });
+            });
+        }
+        
+        // 9. Inicializar com cursor no final
+        setTimeout(function() {
+            const finalPos = display.value.length;
+            display.focus();
+            display.setSelectionRange(finalPos, finalPos);
+            display.setAttribute('data-cursor-pos', finalPos);
+        }, 100);
+    }
+    
+    // Adicionar estilos CSS para o cursor
+    const style = document.createElement('style');
+    style.id = 'cursor-styles';
+    style.textContent = `
+        /* Estilos para garantir cursor visível */
+        .cursor-visible {
+            caret-color: #ff9500 !important; /* Cor laranja para o cursor */
+            cursor: text !important;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+        }
+        
+        /* Sobrescrever qualquer estilo que possa ocultar o cursor */
+        input[type="text"]:focus {
+            caret-color: #ff9500 !important;
+            outline: 2px solid #ff9500 !important;
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Função para detetar se o navegador está a esconder o cursor e aplicar correções específicas
+function applyBrowserSpecificCursorFixes() {
+    // NOVO - Para lidar com problemas específicos de navegadores
+    const display = document.getElementById('display');
+    if (!display) return;
+    
+    // Detetar o navegador
+    const isFirefox = navigator.userAgent.indexOf('Firefox') !== -1;
+    const isChrome = navigator.userAgent.indexOf('Chrome') !== -1;
+    const isSafari = navigator.userAgent.indexOf('Safari') !== -1 && !isChrome;
+    
+    // Correções específicas para cada navegador
+    if (isFirefox) {
+        // Firefox às vezes tem problemas com o cursor em campos com eventos personalizados
+        display.style.caretColor = '#ff9500';
+        
+        // Garantir que o evento 'input' não seja completamente bloqueado
+        display.addEventListener('input', function(e) {
+            // Ainda prevenimos a entrada direta, mas deixamos o cursor visível
+            e.preventDefault();
+            
+            // Manter o cursor no local atual
+            const cursorPos = display.selectionStart;
+            setTimeout(function() {
+                display.setSelectionRange(cursorPos, cursorPos);
+            }, 0);
+        });
+    } 
+    
+    if (isSafari) {
+        // Safari às vezes tem problemas com o cursor em campos com readonly
+        // Garantir que o readonly seja removido mesmo que seja adicionado posteriormente
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'readonly') {
+                    if (display.hasAttribute('readonly')) {
+                        display.removeAttribute('readonly');
+                    }
+                }
+            });
+        });
+        
+        observer.observe(display, { attributes: true });
+    }
+}
+
+// Executar correções específicas de navegador após o carregamento
+window.addEventListener('load', applyBrowserSpecificCursorFixes);

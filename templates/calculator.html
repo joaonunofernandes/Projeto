@@ -56,7 +56,7 @@
                         <div class="history-result">= {{ item.result }}</div>
                         <div class="history-actions">
                             <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression }}', true)">Usar Expressão</button>
-                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result }}', false)">Usar Resultado</button>
+                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result }}', false, '{{ item.original_result|tojson|safe }}')">Usar Resultado</button>
                         </div>
                     </div>
                     {% endfor %}
@@ -75,7 +75,7 @@
         <h1>Calculadora de Reais e Complexos</h1>
         <form method="POST">
             <!-- Campo de entrada para mostrar a expressão e o resultado -->
-            <input type="text" name="expression" id="display" value="{{ result }}" readonly>
+            <input type="text" name="expression" id="display" value="{{ result }}" class="cursor-visible">
             <!-- readonly impede o utilizador de escrever diretamente no campo -->
             <div class="buttons">
                 <!-- Primeira linha de botões -->

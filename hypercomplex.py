@@ -551,11 +551,546 @@ class Quaternion:
             self.c / norm,
             self.d / norm
         )
+    
+    def arg(self):
+        """
+        Calcula o argumento do quaternião, que é o ângulo em radianos entre a parte real
+        e a parte vetorial. Para um quaternião q = a + bi + cj + dk, o argumento é
+        definido como arccos(a/|q|), onde |q| é a norma do quaternião.
+        
+        Para quaterniões puramente reais positivos, o argumento é 0.
+        Para quaterniões puramente reais negativos, o argumento é π.
+        Para quaterniões nulos, o argumento é indefinido (retorna 0).
+        
+        Returns:
+            float: O argumento do quaternião em radianos.
+        """
+        norm = self.norm()
+    
+        # Se o quaternião for aproximadamente nulo, o argumento é indefinido
+        # Por convenção, retornamos 0
+        epsilon = 1e-15
+        if abs(norm) < epsilon:
+            return 0.0
+    
+        # Calcula o ângulo entre a parte real e o quaternião completo
+        # arccos(a/|q|) onde a é a parte real e |q| é a norma
+        cos_theta = self.a / norm
+    
+        # Garante que o valor está no domínio válido de arccos [-1, 1]
+        cos_theta = max(-1.0, min(1.0, cos_theta))
+    
+        return math.acos(cos_theta)
+    
+    def sin(self):
+        """
+        Calcula o seno do quaternião.
+        Para q = a + v (onde v é a parte vetorial), temos:
+        sin(q) = sin(a) * cosh(|v|) + cos(a) * sinh(|v|) * (v/|v|)
+    
+        Returns:
+            Quaternion: Seno do quaternião
+        """
+        # Obtém a parte escalar (real) e vetorial
+        scalar_part = self.a
+        vector_part = Quaternion(0, self.b, self.c, self.d)
+        vector_norm = vector_part.norm()
+    
+        # Trata o caso especial quando a parte vetorial é zero
+        if abs(vector_norm) < 1e-15:
+            return Quaternion(math.sin(scalar_part), 0, 0, 0)
+    
+        # Calcula as componentes da fórmula
+        sin_a = math.sin(scalar_part)
+        cos_a = math.cos(scalar_part)
+        cosh_norm = math.cosh(vector_norm)
+        sinh_norm = math.sinh(vector_norm)
+    
+        # Normaliza o vetor
+        unit_vector = vector_part * (1.0 / vector_norm)
+    
+        # Aplica a fórmula
+        result = Quaternion(sin_a * cosh_norm, 0, 0, 0) + unit_vector * (cos_a * sinh_norm)
+        return result
+
+    def cos(self):
+        """
+        Calcula o cosseno do quaternião.
+        Para q = a + v (onde v é a parte vetorial), temos:
+        cos(q) = cos(a) * cosh(|v|) - sin(a) * sinh(|v|) * (v/|v|)
+    
+        Returns:
+            Quaternion: Cosseno do quaternião
+        """
+        # Obtém a parte escalar (real) e vetorial
+        scalar_part = self.a
+        vector_part = Quaternion(0, self.b, self.c, self.d)
+        vector_norm = vector_part.norm()
+    
+        # Trata o caso especial quando a parte vetorial é zero
+        if abs(vector_norm) < 1e-15:
+            return Quaternion(math.cos(scalar_part), 0, 0, 0)
+    
+        # Calcula as componentes da fórmula
+        sin_a = math.sin(scalar_part)
+        cos_a = math.cos(scalar_part)
+        cosh_norm = math.cosh(vector_norm)
+        sinh_norm = math.sinh(vector_norm)
+    
+        # Normaliza o vetor
+        unit_vector = vector_part * (1.0 / vector_norm)
+    
+        # Aplica a fórmula
+        result = Quaternion(cos_a * cosh_norm, 0, 0, 0) - unit_vector * (sin_a * sinh_norm)
+        return result
+
+    def tan(self):
+        """
+        Calcula a tangente do quaternião como sin(q) * cos(q)^-1.
+    
+        Returns:
+            Quaternion: Tangente do quaternião
+        """
+        cos_q = self.cos()
+        sin_q = self.sin()
+        return sin_q / cos_q  # Usa o operador / já implementado
+
+    def asin(self):
+        """
+        Calcula o arco-seno do quaternião usando asin(q) = pi/2 - acos(q).
+        """
+        pi_half_q = Quaternion(math.pi / 2.0)
+        acos_q = self.acos() # Usa a acos definida acima (que pode ter fallback)
+        return pi_half_q - acos_q
+
+    def acos(self):
+        """
+        Calcula o arco-cosseno do quaternião q = s + v.
+        Resolve w para q = cos(w), onde w = ws + wv.
+        Retorna o valor que corresponde a ws principal [0, pi].
+        """
+        s = self.a
+        vec_v_norm_sq = self.b**2 + self.c**2 + self.d**2
+        vec_v_norm = math.sqrt(vec_v_norm_sq)
+        q_norm_sq = s**2 + vec_v_norm_sq
+        # q_norm = math.sqrt(q_norm_sq) # |q|
+
+        # Caso especial: q é real
+        if vec_v_norm < 1e-12: # Praticamente real
+            if -1.0 <= s <= 1.0:
+                return Quaternion(math.acos(s), 0, 0, 0)
+            elif s > 1.0:
+                # acos(s) = i * acosh(s)
+                # Para quaterniões, -i * acosh(s) se usarmos a fórmula -i*ln(...)
+                # Ou, mais diretamente, para um q real > 1, o resultado tem parte imaginária i
+                # Usando a definição que w_s=0, |w_v|=acosh(s), wv na direção de i.
+                # No entanto, a derivação geral abaixo deve cobrir isso.
+                # A definição cos(w_s)cosh|wv| = s, sin(w_s)sinh|wv|=0.
+                # Se sin(w_s)=0 => w_s=0 ou pi.
+                # Se w_s=0, cosh|wv|=s => |wv|=acosh(s). wv_dir pode ser (1,0,0)
+                # return Quaternion(0, math.acosh(s), 0, 0) # acos(x) = i acosh(x) => (0, acosh(x),0,0)
+                # A fórmula que deu o resultado esperado não tem esta forma para reais.
+                # A fórmula com cos^2(ws) deve ser usada.
+                pass # Deixar a fórmula geral tratar
+            else: # s < -1.0
+                # acos(s) = pi - i * acosh(-s)
+                # return Quaternion(math.pi, -math.acosh(-s), 0, 0)
+                pass # Deixar a fórmula geral tratar
+
+        # Discriminante da equação quadrática para cos^2(ws)
+        # X^2 - (|q|^2+1)X + s^2 = 0
+        # discriminante = ( (|q|^2+1)^2 - 4*s^2 )
+        # Para o seu exemplo: q=(1,1,-1,2), |q|^2=7, s=1
+        # disc = (7+1)^2 - 4*1^2 = 64 - 4 = 60
+        discriminant_val = (q_norm_sq + 1)**2 - 4 * s**2
+
+        if discriminant_val < -1e-9: # Pequena tolerância para erros de fp
+            # Isto não deve acontecer para quaterniões reais ou "normais".
+            # Pode indicar um problema se q_norm_sq for muito pequeno ou s for muito grande.
+            # Recorrer à fórmula logarítmica original como fallback ou levantar erro.
+            # Para agora, vamos prosseguir, mas isto é um ponto de atenção.
+            # Se o discriminante for negativo, sqrt dele é imaginário, cos^2(ws) seria complexo.
+            # Isso acontece se q for "muito" não-real de uma certa forma.
+            # Ex: se q = 2i, |q|^2=4, s=0. disc = (4+1)^2 - 0 = 25.
+            # se q = 0.1i, |q|^2=0.01, s=0. disc = (0.01+1)^2 -0 = 1.01^2
+            # Por agora, assumimos que é >= 0
+            # Se realmente for negativo, significa que não há solução real para cos^2(ws)
+            # e a premissa da derivação pode não se aplicar diretamente, ou w_s é complexo.
+            # No entanto, arccos de quaterniões é sempre um quaternião.
+            # A fórmula original com logaritmos é geralmente mais robusta para todos os casos.
+            # Apenas se o resultado específico for desejado, esta derivação é usada.
+            # Se der negativo, vamos usar a implementação original como fallback:
+            # print("Alerta: Discriminante negativo em acos, usando fallback logarítmico.")
+            neg_i_unit = Quaternion(0, -1, 0, 0)
+            one = Quaternion(1, 0, 0, 0)
+            q_squared = self * self
+            q_squared_minus_one = q_squared - one
+            sqrt_term = q_squared_minus_one.sqrt() # Usa a sua sqrt
+            temp = self + sqrt_term
+            return neg_i_unit * temp.ln() # Usa a sua ln
+
+        # cos_sq_ws = ( (q_norm_sq + 1) - math.sqrt(discriminant_val) ) / 2.0
+        # O valor de cos(ws) que corresponde à parte real 1.20639 é sqrt(4 - sqrt(15)) approx 0.3563943
+        # (4 - sqrt(15)) approx 0.12701695
+        # Com |q|^2 = 7, s = 1:
+        # cos_sq_ws = ( (7+1) - sqrt(60) ) / 2.0 = (8 - 2*sqrt(15)) / 2.0 = 4 - sqrt(15)
+        # Isto corresponde.
+        
+        cos_sq_ws_val = ( (q_norm_sq + 1) - math.sqrt(max(0, discriminant_val)) ) / 2.0 # max(0,...) para segurança numérica
+
+        if cos_sq_ws_val < -1e-9 or cos_sq_ws_val > 1.0 + 1e-9:
+            # Se cos_sq_ws estiver fora de [0,1], algo está errado ou é um caso especial.
+            # Se q é real, e s > 1, cos_sq_ws = 1. Se s < -1, cos_sq_ws = 1.
+            # Caso real q=s:
+            if vec_v_norm < 1e-12: # É real
+                if s > 1.0: # acos(s) = 0 + i acosh(s) ; ou seja, ws=0, |wv|=acosh(s)
+                    return Quaternion(0, math.acosh(s),0,0) # Assume que 'i' imaginário mapeia para b
+                elif s < -1.0: # acos(s) = pi + i acosh(-s)
+                    return Quaternion(math.pi, math.acosh(-s),0,0) # Parte b
+                # Se s in [-1,1] já foi tratado
+            else: # Não é real e cos_sq_ws está fora de [0,1]. Pode ser problemático.
+                # Usar fallback
+                # print(f"Alerta: cos_sq_ws = {cos_sq_ws_val} fora de [0,1]. Usando fallback.")
+                neg_i_unit = Quaternion(0, -1, 0, 0)
+                one = Quaternion(1, 0, 0, 0)
+                q_squared = self * self
+                q_squared_minus_one = q_squared - one
+                sqrt_term = q_squared_minus_one.sqrt()
+                temp = self + sqrt_term
+                return neg_i_unit * temp.ln()
+
+        # Garantir que o argumento de acos para ws está em [-1, 1]
+        # cos_ws_candidate = math.sqrt(max(0, cos_sq_ws_val)) # Isto seria para ws em [0, pi/2]
+        # Para o exemplo s=1, cos_ws deve ser 0.35639. s é positivo.
+        # A escolha de qual raiz de cos_sq_ws (positiva ou negativa) tomar para cos_ws
+        # pode depender de s e vec_v_norm. A convenção é que ws está em [0,pi].
+
+        cos_ws = math.sqrt(max(0, min(1,cos_sq_ws_val))) # Tomar a raiz positiva por agora.
+                                                        # ws = acos(cos_ws) estará em [0, pi/2]
+                                                        # Isto é uma simplificação.
+                                                        # A derivação original para o exemplo deu cos(ws) ~ 0.356, ws ~ 1.206 (que está em [0,pi])
+
+        # Para obter ws no intervalo completo [0, pi], e lidar com o sinal de cos_ws:
+        # A ideia é que q_s = cos(w_s) cosh(|w_v|). Como cosh >=1, sgn(q_s) = sgn(cos(w_s))
+        # A menos que cosh(|w_v|) seja muito grande e "mascare" o sinal de cos(w_s).
+        # A referência para o resultado esperado indica ws ~ 1.20639, então cos(ws) ~ 0.356 é positivo.
+        # Nosso s=1 é positivo.
+
+        # Tentativa mais robusta para cos_ws:
+        # Se ws é o ângulo principal, cos(ws) e s devem ter sinais correlacionados
+        # com cosh(|wv|) >= 1.
+        # A solução $4 - \sqrt{15}$ para $\cos^2(w_s)$ é sempre positiva.
+        # Então $\cos(w_s)$ pode ser $\pm \sqrt{4-\sqrt{15}}$.
+        # Para $s=1$, $\cos(w_s)$ foi $\sqrt{4-\sqrt{15}} \approx 0.35639$.
+        
+        # Se $q_s = 0$, então $\cos(w_s)=0 \implies w_s = \pi/2$ (se $\cosh(|\vec{w_v}|) \ne 0$).
+        if abs(s) < 1e-12 : # Se s é zero
+            if q_norm_sq > 1e-12: # Evita q=0
+                ws = math.pi / 2.0
+                cos_ws = 0.0
+            else: # q é zero
+                return Quaternion(math.pi / 2.0, 0,0,0) # acos(0) = pi/2
+        else:
+            # Esta é a parte crítica: determinar cos_ws para que ws esteja em [0,pi]
+            # A partir de cos^2(ws), temos duas hipóteses para cos(ws): +/- sqrt(cos_sq_ws_val)
+            # Testar qual delas (ou ambas) leva a uma solução consistente para |wv| >= 0.
+            # A heurística é que cos_ws geralmente tem o mesmo sinal que s, mas não sempre.
+            # Para o exemplo dado, s=1 (positivo), cos_ws foi positivo.
+            # Vamos assumir que cos_ws = sqrt(cos_sq_ws_val) por agora.
+            # E ws = acos(cos_ws) estará em [0, pi/2].
+            # Se o resultado esperado tem ws > pi/2, isto falhará.
+            # O resultado esperado tem ws = 1.20639 rad = 69.1 graus, que está em [0,pi/2].
+
+            if cos_sq_ws_val < 1e-12 and abs(s) > 1e-9: # cos_sq_ws_val é quase 0, mas s não é.
+                                                        # Ex: q = i. s=0, |q|^2=1. disc=(1+1)^2-0=4. cos_sq_ws=(2-2)/2=0.
+                cos_ws = 0.0
+                ws = math.pi / 2.0
+            elif cos_sq_ws_val >= 1.0 - 1e-9 and abs(s) > 1e-9 : # cos_sq_ws_val é quase 1, mas s não é +/-1
+                                                                # Este caso é mais complexo, pode indicar que |wv| é muito pequeno
+                if vec_v_norm < 1e-9: # É praticamente real, tratado acima
+                    pass # já tratado
+                # Se s=0.5, |q|^2=0.25. disc=(0.25+1)^2 - 4*0.25^2 = 1.25^2 - 1 = 1.5625-1=0.5625.
+                # cos_sq_ws = (1.25 - sqrt(0.5625))/2 = (1.25-0.75)/2 = 0.25. cos_ws=0.5. ws=acos(0.5)=pi/3.
+                # Esta lógica parece ok.
+                cos_ws = math.sqrt(min(1,max(0,cos_sq_ws_val)))
+                # Se s for negativo, e ws deve estar em [pi/2, pi], então cos_ws deve ser negativo.
+                # Ex: acos(-0.5) = 2pi/3. cos(2pi/3) = -0.5.
+                # Se s < 0, e a solução para cos_ws é positiva, precisamos inverter o sinal e ajustar ws.
+                # Isto está a ficar complicado. A derivação original com ws e |wv| é mais direta.
+                # ws = acos( VAL ) onde VAL foi derivado de forma a que ws seja a parte escalar esperada.
+                # VAL = sqrt( ( (q_norm_sq + 1) - math.sqrt(discriminant_val) ) / 2.0 ) se q_s >= 0
+                # VAL = -sqrt( ( (q_norm_sq + 1) - math.sqrt(discriminant_val) ) / 2.0 ) se q_s < 0 ?
+                # Não, o sinal de cos(w_s) é determinado pela equação $q_s = \cos(w_s)\cosh(|\vec{w}_v|)$.
+                # Como $\cosh(|\vec{w}_v|) \ge 1$, $\mathrm{sgn}(\cos(w_s)) = \mathrm{sgn}(q_s)$ (a menos que $q_s=0$).
+                
+                temp_cos_val = math.sqrt(min(1.0, max(0.0, cos_sq_ws_val)))
+                if s < 0.0:
+                    cos_ws = -temp_cos_val
+                else:
+                    cos_ws = temp_cos_val
+                
+                if abs(cos_ws) > 1.0 : # clip
+                    cos_ws = math.copysign(1.0, cos_ws)
+
+                ws = math.acos(cos_ws) # ws estará em [0, pi]
+            else: # Caso geral, cos_sq_ws_val em (0,1)
+                temp_cos_val = math.sqrt(cos_sq_ws_val)
+                if s < 0.0 and temp_cos_val > 1e-9 : # Se s é negativo, cos_ws deve ser negativo
+                    cos_ws = -temp_cos_val
+                else: # s é positivo ou s é zero (ws=pi/2)
+                    cos_ws = temp_cos_val
+                
+                if abs(cos_ws) > 1.0 : # clip
+                    cos_ws = math.copysign(1.0, cos_ws)
+                ws = math.acos(cos_ws)
+
+
+        vec_wv_norm = 0.0
+        # Calcular |wv|
+        if abs(cos_ws) < 1.0 - 1e-9 : # sin(ws) != 0 ; ws não é 0 nem pi
+            # Usar sin(ws) = sqrt(1 - cos_ws^2)
+            sin_ws = math.sqrt(max(0, 1.0 - cos_ws**2)) # sin_ws é >= 0 pois ws em [0,pi]
+            if abs(sin_ws) < 1e-9: # Se sin_ws for zero (ws=0 ou pi)
+                if abs(s - cos_ws * 1.0) < 1e-9 : # cosh(0)=1
+                    vec_wv_norm = 0.0 # |wv| é zero
+                elif abs(s) > 1e-9 : # cos_ws deve ser +/-1 aqui
+                    # Este é o caso em que q é real e |s| > 1.
+                    # ws=0 => cos_ws=1. q_s = cosh|wv|. |wv|=acosh(q_s).
+                    # ws=pi => cos_ws=-1. q_s = -cosh|wv|. |wv|=acosh(-q_s).
+                    if abs(ws) < 1e-9 : # ws é 0
+                        if s > 1.0 - 1e-9: vec_wv_norm = math.acosh(max(1.0,s))
+                        else: vec_wv_norm = 0.0 # Ex: acos(1)=0
+                    elif abs(ws - math.pi) < 1e-9 : # ws é pi
+                        if s < -1.0 + 1e-9: vec_wv_norm = math.acosh(max(1.0,-s))
+                        else: vec_wv_norm = 0.0 # Ex: acos(-1)=pi
+                    else: # Situação inesperada
+                        # print(f"Alerta: sin_ws perto de zero mas ws não é 0/pi. ws={ws}")
+                        return self.acos_log_fallback() # Usar fallback
+                else: # s é zero, ws é pi/2, sin_ws é 1. Deveria ter entrado no else.
+                    # Este ramo é para quando sin_ws é inesperadamente zero.
+                    vec_wv_norm = 0.0
+            else: # sin_ws é não-zero
+                val_for_asinh = vec_v_norm / sin_ws
+                vec_wv_norm = math.asinh(val_for_asinh)
+        else: # cos_ws é +/-1 (ws é 0 ou pi) => sin_ws é 0
+            # Neste caso, q_s = +/- cosh(|wv|).
+            # Se q é real, |vec_v_norm|=0. Então |wv| deve ser 0.
+            # Se q não é real, mas ws é 0 ou pi, então a parte vetorial deve ser 0.
+            # Isso significa que vec_v_norm deveria ter sido zero.
+            if vec_v_norm < 1e-9: # Praticamente real, |wv| é 0
+                vec_wv_norm = 0.0
+            else: # cos_ws é +/-1 mas vec_v_norm não é zero. Inconsistência ou caso limite.
+                # Ex: acos(1+0.001i). |q|^2~1, s~1. cos_sq_ws~1. cos_ws~1. ws~0. sin_ws~0.
+                # Neste caso q_s = cosh(|wv|). |wv|=acosh(q_s).
+                # A fórmula com acosh(s/cos_ws) é melhor.
+                if abs(cos_ws) > 1e-9: # Evita divisão por zero se cos_ws for zero (já tratado por sin_ws)
+                    val_for_acosh = s / cos_ws
+                    if val_for_acosh < 1.0 - 1e-9 and val_for_acosh > -1.0 + 1e-9:
+                        # Se s/cos_ws estiver em (-1,1), acosh não é real.
+                        # Ex: q = 0.5+1000i. s=0.5. |q|^2 é grande. cos_sq_ws é pequeno.
+                        # cos_ws é pequeno. ws ~ pi/2.
+                        # Este ramo (cos_ws é +/-1) não devia ser atingido para q não-real.
+                        # print(f"Alerta: cos_ws= +/-1 mas q não-real. Usando fallback.")
+                        return self.acos_log_fallback()
+                    elif val_for_acosh < -1.0 -1e-9: # Ex: s=-2, cos_ws=-1. s/cos_ws = 2.
+                        vec_wv_norm = math.acosh(max(1.0, -val_for_acosh))
+                    else:
+                        vec_wv_norm = math.acosh(max(1.0, val_for_acosh))
+                else: # cos_ws é zero, ws=pi/2. sin_ws=1. Deveria usar o ramo de asinh.
+                    # Este else é para segurança, mas não deve ser comum.
+                    vec_wv_norm = 0.0
+
+
+        # Parte vetorial
+        res_vec_b, res_vec_c, res_vec_d = 0,0,0
+        if vec_v_norm > 1e-9 and abs(vec_wv_norm) > 1e-9: # Evitar divisão por zero e mult por zero
+            factor = -vec_wv_norm / vec_v_norm
+            res_vec_b = self.b * factor
+            res_vec_c = self.c * factor
+            res_vec_d = self.d * factor
+
+        return Quaternion(ws, res_vec_b, res_vec_c, res_vec_d)
+
+    def atan(self): #TÁ ERRADO
+        """
+        Calcula o arco-tangente usando a fórmula alternativa:
+        atan(q) = (-i/2) * ln((1+iq)(1-iq)^-1)
+        """
+        i_q = Quaternion(0, 1, 0, 0)       # Unidade i
+        neg_i_half_q = Quaternion(0, -0.5, 0, 0) # -i/2
+        one_q = Quaternion(1, 0, 0, 0)     # Unidade 1
+
+        term1 = one_q + (i_q * self)
+        term2_inv = (one_q - (i_q * self)).inverse() # (1-iq)^-1
+
+        log_arg = term1 * term2_inv
+
+        # Precisa usar a ln original (semelhante ao fallback do acos)
+        ln_val = log_arg.ln_log_fallback() if hasattr(log_arg, 'ln_log_fallback') else log_arg.ln()
+
+        return neg_i_half_q * ln_val
+    
+    def ln(self):
+        """
+        Calcula o logaritmo natural (ln) do quaternião.
+        Para q = |q|*e^(v*θ), onde v é um vetor unitário e θ é um ângulo:
+        ln(q) = ln(|q|) + v*θ, onde θ = arccos(scalar_part / norm)
+    
+        Returns:
+            Quaternion: Logaritmo natural do quaternião
+        """
+        norm = self.norm()
+    
+        # Verificar se o quaternião é aproximadamente zero
+        if abs(norm) < 1e-15:
+            raise ValueError("Logaritmo de quaternião (aproximadamente) nulo")
+    
+        # Obter a parte escalar e vetorial
+        scalar_part = self.a
+        vector_part = Quaternion(0, self.b, self.c, self.d)
+        vector_norm = vector_part.norm()
+    
+        # Se a parte vetorial é aproximadamente zero, é essencialmente um número real
+        if abs(vector_norm) < 1e-15:
+            if scalar_part >= 0:
+                return Quaternion(math.log(norm), 0, 0, 0)
+            else:
+                # Para números reais negativos, ln(q) = ln(|q|) + π*i
+                return Quaternion(math.log(norm), math.pi, 0, 0)
+    
+        # Calcular o ângulo θ
+        # θ = arccos(scalar_part / norm)
+        theta = math.acos(scalar_part / norm)
+    
+        # Obter o vetor unitário v = vector_part / vector_norm
+        unit_vector = vector_part * (1.0 / vector_norm)
+    
+        # Calcular ln(q) = ln(|q|) + v*θ
+        return Quaternion(math.log(norm), 0, 0, 0) + unit_vector * theta
+
+    def sinh(self):
+        """
+        Calcula o seno hiperbólico do quaternião.
+        sinh(q) = (e^q - e^(-q)) / 2
+
+        Returns:
+            Quaternion: Seno hiperbólico do quaternião
+        """
+        # Implementação baseada na definição com exponenciais
+        exp_q = self.exp()
+        exp_neg_q = (self * -1).exp()
+        return (exp_q - exp_neg_q) * 0.5
+
+    def cosh(self):
+        """
+        Calcula o cosseno hiperbólico do quaternião.
+        cosh(q) = (e^q + e^(-q)) / 2
+    
+        Returns:
+            Quaternion: Cosseno hiperbólico do quaternião
+        """
+        # Implementação baseada na definição com exponenciais
+        exp_q = self.exp()
+        exp_neg_q = (self * -1).exp()
+        return (exp_q + exp_neg_q) * 0.5
+
+    def tanh(self):
+        """
+        Calcula a tangente hiperbólica do quaternião.
+        tanh(q) = sinh(q) / cosh(q)
+    
+        Returns:
+            Quaternion: Tangente hiperbólica do quaternião
+        """
+        # Implementação baseada na relação entre sinh e cosh
+        sinh_q = self.sinh()
+        cosh_q = self.cosh()
+        return sinh_q / cosh_q
+
+    def asinh(self):
+        """
+        Calcula o arco-seno hiperbólico do quaternião.
+        asinh(q) = ln(q + sqrt(q² + 1))
+    
+        Returns:
+            Quaternion: Arco-seno hiperbólico do quaternião
+        """
+        one = Quaternion(1, 0, 0, 0)
+        q_squared = self * self
+        return (self + (q_squared + one).sqrt()).ln()
+
+    def acosh(self):
+        """
+        Calcula o arco-cosseno hiperbólico do quaternião.
+        Para valores reais, verifica o domínio (x ≥ 1).
+        Para quaterniões gerais, usa a fórmula acosh(q) = ln(q + sqrt(q² - 1))
+
+        Returns:
+            Quaternion: Arco-cosseno hiperbólico do quaternião
+        """
+        # Para quaterniões reais puros com valor < 1, usa a extensão complexa
+        if abs(self.b) < 1e-15 and abs(self.c) < 1e-15 and abs(self.d) < 1e-15 and self.a < 1:
+            # Para valores reais < 1, acosh(x) tem uma parte imaginária
+            # acosh(x) = ln(x + sqrt(x² - 1)) = ln(x + i*sqrt(1-x²))
+            x = self.a
+            return Quaternion(0, math.acos(x)).acosh()  # Converte para quaternião com parte imaginária
+    
+        # Para outros casos, usa a fórmula normal
+        one = Quaternion(1, 0, 0, 0)
+        q_squared = self * self
+        return (self + (q_squared - one).sqrt()).ln()
+
+    def atanh(self):
+        """
+        Calcula o arco-tangente hiperbólico do quaternião.
+        atanh(q) = (1/2) * ln((1+q)/(1-q))
+    
+        Returns:
+            Quaternion: Arco-tangente hiperbólico do quaternião
+        """
+        one = Quaternion(1, 0, 0, 0)
+        half = 0.5
+    
+        numerator = one + self
+        denominator = one - self
+    
+        return (numerator / denominator).ln() * half
+
+    def exp(self):
+        """
+        Calcula a exponencial do quaternião.
+        Para q = a + v (onde v é a parte vetorial), temos:
+        exp(q) = exp(a) * [cos(|v|) + (v/|v|) * sin(|v|)]
+    
+        Returns:
+            Quaternion: Exponencial do quaternião
+        """
+        # Obtém a parte escalar (real) e vetorial
+        scalar_part = self.a
+        vector_part = Quaternion(0, self.b, self.c, self.d)
+        vector_norm = vector_part.norm()
+    
+        # Calcula e^a
+        exp_a = math.exp(scalar_part)
+    
+        # Trata o caso especial quando a parte vetorial é zero
+        if abs(vector_norm) < 1e-15:
+            return Quaternion(exp_a, 0, 0, 0)
+    
+        # Calcula as componentes da fórmula
+        cos_norm = math.cos(vector_norm)
+        sin_norm = math.sin(vector_norm)
+    
+        # Normaliza o vetor
+        unit_vector = vector_part * (1.0 / vector_norm)
+    
+        # Aplica a fórmula
+        return Quaternion(exp_a * cos_norm, 0, 0, 0) + unit_vector * (exp_a * sin_norm)
 
     def __str__(self):
         """
         Representação em string do quaternião de forma mais legível.
-        Formato: a + bi + cj + dk, omitindo termos nulos e simplificando coeficientes 1.
+        Formato: a+bi+cj+dk, omitindo termos nulos e simplificando coeficientes 1.
         """
         parts = []
         epsilon = 1e-12 # Tolerância para considerar um float como zero
@@ -567,7 +1102,7 @@ class Quaternion:
                 num_str = str(round(n))
             else:
                 # Formata com casas decimais, removendo zeros e ponto final desnecessários
-                num_str = f"{n:.4f}".rstrip('0').rstrip('.')
+                num_str = f"{n:.6f}".rstrip('0').rstrip('.')
                 # Caso especial: evitar resultado "-0"
                 if num_str == "-0":
                     return "0"
@@ -590,9 +1125,8 @@ class Quaternion:
             if not parts: # Se for o primeiro termo
                 parts.append(f"{sign if sign == '-' else ''}{term}")
             else:
-                # Adiciona sinal e espaço apenas se não for o primeiro termo
-                # ou se o sinal for negativo
-                parts.append(f"{sign} {term}")
+                # Adiciona sinal sem espaço
+                parts.append(f"{sign}{term}")
 
         # Parte j
         if abs(self.c) > epsilon:
@@ -607,7 +1141,7 @@ class Quaternion:
             if not parts:
                 parts.append(f"{sign if sign == '-' else ''}{term}")
             else:
-                parts.append(f"{sign} {term}")
+                parts.append(f"{sign}{term}")
 
         # Parte k
         if abs(self.d) > epsilon:
@@ -622,18 +1156,17 @@ class Quaternion:
             if not parts:
                 parts.append(f"{sign if sign == '-' else ''}{term}")
             else:
-                parts.append(f"{sign} {term}")
+                parts.append(f"{sign}{term}")
 
         if not parts:
             return "0"
         else:
-            # Junta as partes, tratando o primeiro sinal '+' se existir
-            result = " ".join(parts)
-            if result.startswith('+ '):
-                return result[2:]
+            # Junta as partes sem espaços
+            result = "".join(parts)
+            if result.startswith('+'):
+                return result[1:]
             return result
-
-
+        
     def __repr__(self):
         """Representação detalhada do objeto para debugging"""
         return f"Quaternion({self.a}, {self.b}, {self.c}, {self.d})"
@@ -669,14 +1202,9 @@ def parse_quaternion_expr(expression):
     # Conversão do formato func(...)i para func(...)*i (ou qualquer letra seguida de i,j,k)
     # Primeiro captura a expressão até um parêntese fechado, seguido de i,j,k
     expression = re.sub(r'(\w+\([^()]*(?:\([^()]*\)[^()]*)*\))([ijk])(?!\w)', r'\1*\2', expression)
-    #expression = re.sub(r'(\w+\([^()]*(?:\([^()]*\)[^()]*)*\))([ijk])(?!\w)', r'\1*\2', expression)
     
     # Captura casos onde temos letras como variáveis e constantes (ex: pi, e) seguidas de i,j,k
-    expression = re.sub(r'([a-zA-Z_][a-zA-Z0-9_]*)([ijk])(?!\w)', r'\1*\2', expression)
-
-    # Tratamento de funções como sqrt(arg), divL(arg1, arg2), divR(arg1, arg2), etc.
-    # Não precisamos mais da lógica específica de match_func aqui,
-    # pois o eval com safe_env tratará as funções diretamente.
+    expression = re.sub(r'([a-oq-zA-OQ-Z_][a-oq-zA-OQ-Z0-9_]*)([ijk])(?!\w)', r'\1*\2', expression)
 
     # Substitui i, j, k isolados (não como parte de nomes tipo 'sin')
     # Usando limites de palavra (\b) para evitar substituições indesejadas
@@ -699,12 +1227,28 @@ def parse_quaternion_expr(expression):
         'sqrt': lambda q: q.sqrt() if isinstance(q, Quaternion) else math.sqrt(q), # Sqrt de número usa math.sqrt
         'inverse': lambda q: q.inverse() if isinstance(q, Quaternion) else 1.0/q, # Inverso
         'normalize': lambda q: q.normalize() if isinstance(q, Quaternion) else (q/abs(q) if q != 0 else 0), # Normalização
+        'arg': lambda q: q.arg() if isinstance(q, Quaternion) else math.atan2(0, q) if q >= 0 else math.pi,
+
+        # Funções trigonométricas e hiperbólicas
+        'sin': lambda q: q.sin() if isinstance(q, Quaternion) else math.sin(q),
+        'cos': lambda q: q.cos() if isinstance(q, Quaternion) else math.cos(q),
+        'tan': lambda q: q.tan() if isinstance(q, Quaternion) else math.tan(q),
+        'asin': lambda q: q.asin() if isinstance(q, Quaternion) else math.asin(q),
+        'acos': lambda q: q.acos() if isinstance(q, Quaternion) else math.acos(q),
+        'atan': lambda q: q.atan() if isinstance(q, Quaternion) else math.atan(q),
+        'sinh': lambda q: q.sinh() if isinstance(q, Quaternion) else math.sinh(q),
+        'cosh': lambda q: q.cosh() if isinstance(q, Quaternion) else math.cosh(q),
+        'tanh': lambda q: q.tanh() if isinstance(q, Quaternion) else math.tanh(q),
+        'asinh': lambda q: q.asinh() if isinstance(q, Quaternion) else math.asinh(q),
+        'acosh': lambda q: q.acosh() if isinstance(q, Quaternion) else (math.acosh(q) if q >= 1 else Quaternion(0).acosh()),
+        'atanh': lambda q: q.atanh() if isinstance(q, Quaternion) else math.atanh(q),
+        'exp': lambda q: q.exp() if isinstance(q, Quaternion) else math.exp(q),
+        'ln': lambda q: q.ln() if isinstance(q, Quaternion) else math.log(q),
+        
         # divL(q, p) representa a Divisão à Esquerda: p^-1 * q
-        # IMPORTANTE: Agora convertendo automaticamente escalares para Quaternion
         'divL': lambda q, p: (Quaternion(q) if not isinstance(q, Quaternion) else q).left_division(
                             Quaternion(p) if not isinstance(p, Quaternion) else p),
         # divR(q, p) representa a Divisão à Direita: q * p^-1
-        # IMPORTANTE: Agora convertendo automaticamente escalares para Quaternion
         'divR': lambda q, p: (Quaternion(q) if not isinstance(q, Quaternion) else q) / 
                             (Quaternion(p) if not isinstance(p, Quaternion) else p),
         # Adicionando suporte ao operador negativo unário para Quaternion
