@@ -911,22 +911,35 @@ class Quaternion:
 
         return Quaternion(ws, res_vec_b, res_vec_c, res_vec_d)
 
-    def atan(self): #TÁ ERRADO
+    def atan(self):
         """
-        Calcula o arco-tangente usando a fórmula alternativa:
-        atan(q) = (-i/2) * ln((1+iq)(1-iq)^-1)
+        Calcula o arco-tangente do quaternião usando a fórmula:
+        atan(q) = (-i/2) * ln((i+q)^-1 * (i-q))
+        Garante que as operações são feitas na ordem correta para quaterniões.
+
+        Returns:
+            Quaternion: Arco-tangente do quaternião
         """
-        i_q = Quaternion(0, 1, 0, 0)       # Unidade i
-        neg_i_half_q = Quaternion(0, -0.5, 0, 0) # -i/2
-        one_q = Quaternion(1, 0, 0, 0)     # Unidade 1
+        i_q = Quaternion(0, 1, 0, 0)       # Unidade i como Quaternião
+        neg_i_half_q = Quaternion(0, -0.5, 0, 0) # -i/2 como Quaternião
 
-        term1 = one_q + (i_q * self)
-        term2_inv = (one_q - (i_q * self)).inverse() # (1-iq)^-1
+        term_sum = i_q + self         # (i+q)
+        term_diff = i_q - self        # (i-q)
 
-        log_arg = term1 * term2_inv
+        # Verificar se (i+q) é zero antes de inverter
+        norm_sq_sum = term_sum.norm_squared()
+        if abs(norm_sq_sum) < 1e-15:
+            # Se i+q é zero, q = -i. atan(-i) é problemático (infinito).
+            # Poderíamos retornar um valor grande ou levantar um erro.
+            # Vamos levantar um erro por clareza.
+            raise ValueError("atan indefinido para q = -i")
 
-        # Precisa usar a ln original (semelhante ao fallback do acos)
-        ln_val = log_arg.ln_log_fallback() if hasattr(log_arg, 'ln_log_fallback') else log_arg.ln()
+        term_sum_inv = term_sum.inverse() # (i+q)^-1
+
+        log_argument = term_sum_inv * term_diff # (i+q)^-1 * (i-q)
+
+        # Usa a função ln da própria classe
+        ln_val = log_argument.ln()
 
         return neg_i_half_q * ln_val
     
