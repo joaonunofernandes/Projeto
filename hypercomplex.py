@@ -6,7 +6,7 @@ Este módulo será importado pelo app.py principal.
 """
 import re
 import math
-import cmath # Adicionar esta importação
+import cmath 
 import numpy as np
 
 class Quaternion:
@@ -357,48 +357,75 @@ class Quaternion:
         Potenciação do quaternião (self ** exponent)
 
         Args:
-            exponent (int): O expoente (atualmente suporta apenas 2)
+            exponent: O expoente (inteiro, real ou quaternião)
 
         Returns:
             Quaternion: Resultado da potenciação
 
         Raises:
-            TypeError: Se o expoente não for um inteiro.
-            ValueError: Se o expoente inteiro não for 2 (por agora).
+            TypeError: Se o expoente não for um tipo suportado.
         """
-        if not isinstance(exponent, int):
-            raise TypeError("Expoente para potenciação de quaternião deve ser inteiro.")
-
-        if exponent == 2:
-            return self * self # q^2 = q * q
-        elif exponent == 0:
-            return Quaternion(1, 0, 0, 0)
-        elif exponent == 1:
-            return self
-        elif exponent < 0:
-            # q^-n = (q^-1)^n
-            if exponent == -1:
-                return self.inverse()
-            else:
-                # Implementação mais geral (poderia ser otimizada com exp. por quadratura)
-                inv = self.inverse()
+        # Caso para expoentes inteiros
+        if isinstance(exponent, int):
+            if exponent == 2:
+                return self * self  # q^2 = q * q
+            elif exponent == 0:
+                return Quaternion(1, 0, 0, 0)
+            elif exponent == 1:
+                return self
+            elif exponent < 0:
+                # q^-n = (q^-1)^n
+                if exponent == -1:
+                    return self.inverse()
+                else:
+                    # Implementação mais geral
+                    inv = self.inverse()
+                    res = Quaternion(1, 0, 0, 0)
+                    for _ in range(abs(exponent)):
+                        res = res * inv
+                    return res
+            else:  # exponent > 2
+                # Implementação por exponenciação binária
                 res = Quaternion(1, 0, 0, 0)
-                for _ in range(abs(exponent)):
-                       res = res * inv
+                temp = self
+                n = exponent
+                while n > 0:
+                    if n % 2 == 1:  # Se o bit atual é 1
+                        res = res * temp
+                    temp = temp * temp  # Quadrado para o próximo bit
+                    n //= 2  # Move para o próximo bit
                 return res
-        else: # exponent > 2
-            # Implementação mais geral (poderia ser otimizada com exp. por quadratura)
-            res = Quaternion(1, 0, 0, 0)
-            temp = self
-            n = exponent
-            # Exponenciação por quadratura (binária)
-            while n > 0:
-                if n % 2 == 1: # Se o bit atual é 1
-                     res = res * temp
-                temp = temp * temp # Quadrado para o próximo bit
-                n //= 2 # Move para o próximo bit
-            return res
-            # raise ValueError("Potenciação de quaternião atualmente só suporta expoente 2.")
+    
+        # Novo caso: expoentes reais (float)
+        elif isinstance(exponent, float):
+            # Para expoentes reais, usamos a exponencial complexa:
+            # q^r = exp(r * log(q))
+            
+            # Primeiro, calculamos o logaritmo natural de q
+            log_q = self.ln()
+            
+            # Multiplicamos pelo expoente
+            r_log_q = log_q * exponent
+            
+            # Retornamos a exponencial desse produto
+            return r_log_q.exp()
+    
+        # Novo caso: expoentes quaterniões
+        elif isinstance(exponent, Quaternion):
+            # Para um expoente quaterniônico, usamos a exponencial complexa:
+            # q^p = exp(p * log(q))
+            
+            # Primeiro, calculamos o logaritmo natural de q
+            log_q = self.ln()
+            
+            # Multiplicamos pelo expoente quaterniões
+            p_log_q = exponent * log_q
+            
+            # Retornamos a exponencial desse produto
+            return p_log_q.exp()
+    
+        else:
+            raise TypeError("Expoente para potenciação de quaternião deve ser inteiro, float ou quaternião.")
 
     def conjugate(self):
         """
@@ -645,8 +672,70 @@ class Quaternion:
         # A raiz quadrada principal (parte real do resultado >= 0).
         # cmath.sqrt fornece este comportamento.
         return self._apply_complex_func_to_quaternion(cmath.sqrt)
-
     
+    # Função para calcular a norma da parte vetorial (absIJK)
+    def vec_norm(self):
+        """
+        Calcula a norma (magnitude) da parte vetorial do quaternião: ||vec(q)|| = sqrt(b^2 + c^2 + d^2)
+
+        Returns:
+            float: Norma da parte vetorial do quaternião
+        """
+        # Calculamos a norma da parte vetorial (componentes i, j, k)
+        norm_sq_vec = self.b**2 + self.c**2 + self.d**2
+
+        # Adicionamos uma pequena verificação para evitar erro em math.sqrt para valores negativos muito pequenos devido a precisão
+        if norm_sq_vec < 0 and abs(norm_sq_vec) < 1e-15:
+            return 0.0
+    
+        return math.sqrt(norm_sq_vec)
+
+    # Função para normalizar a parte vetorial (sign)
+    def vec_normalize(self):
+        """
+        Normaliza a parte vetorial do quaternião, retornando um quaternião com a mesma 
+        direção vetorial mas com norma vetorial unitária.
+
+        Returns:
+            Quaternion: Quaternião com a parte vetorial normalizada e parte real zero
+
+        Raises:
+            ZeroDivisionError: Se a parte vetorial for (aproximadamente) nula
+        """
+        # Calculamos a norma da parte vetorial
+        norm_vec = self.vec_norm()
+    
+        # Verificamos se a norma é suficientemente diferente de zero
+        epsilon = 1e-15  # Tolerância para zero
+        if abs(norm_vec) < epsilon:
+            raise ZeroDivisionError("Normalização de parte vetorial (aproximadamente) nula")
+    
+        # Retornamos um novo quaternião com a parte vetorial normalizada e parte real zero
+        return Quaternion(
+            0,                   # Parte real zero
+            self.b / norm_vec,   # Componente i normalizada
+            self.c / norm_vec,   # Componente j normalizada 
+            self.d / norm_vec    # Componente k normalizada
+        )
+    
+    # Função para calcular 10^q (onde q pode ser um quaternião)
+    def ten_power(self):
+        """
+        Calcula 10 elevado à potência do quaternião: 10^q
+
+        Returns:
+            Quaternion: Resultado da operação 10^q
+        """
+        # Utilizamos a função exponencial: 10^q = e^(q*log(10))
+        # Primeiro, calculamos log(10)
+        log_10 = math.log(10)
+    
+        # Multiplicamos o quaternião pelo log(10)
+        q_scaled = self * log_10
+    
+        # Retornamos e^(q*log(10))
+        return q_scaled.exp()
+
 
     def __str__(self):
         """
@@ -663,7 +752,7 @@ class Quaternion:
                 num_str = str(round(n))
             else:
                 # Formata com casas decimais, removendo zeros e ponto final desnecessários
-                num_str = f"{n:.6f}".rstrip('0').rstrip('.')
+                num_str = f"{n:.6g}".rstrip('0').rstrip('.')
                 # Caso especial: evitar resultado "-0"
                 if num_str == "-0":
                     return "0"
@@ -731,6 +820,105 @@ class Quaternion:
     def __repr__(self):
         """Representação detalhada do objeto para debugging"""
         return f"Quaternion({self.a}, {self.b}, {self.c}, {self.d})"
+    
+class Coquaternion:
+    """
+    Classe que representa um coquaternião q = a + bi + cj + dk
+    onde a, b, c, d são números reais e i, j, k são unidades imaginárias.
+
+    Regras de multiplicação:
+    i² = -1, j² = +1, k² = +1
+    ij = k,  ji = -k
+    jk = -i, kj = i
+    ki = j,  ik = -j
+    ijk = 1 (decorrente das outras: ij*k = k*k = 1)
+    """
+    def __init__(self, a=0, b=0, c=0, d=0):
+        self.a = float(a)
+        self.b = float(b)
+        self.c = float(c)
+        self.d = float(d)
+
+    @classmethod
+    def from_string(cls, s):
+        # Reutiliza a lógica de parsing de Quaternion, pois o formato é idêntico
+        q_temp = Quaternion.from_string(s) # Usa o parser de Quaternion
+        return cls(q_temp.a, q_temp.b, q_temp.c, q_temp.d)
+
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            return Coquaternion(self.a + other, self.b, self.c, self.d)
+        elif isinstance(other, complex):
+            # Trata complexo como a + bi + 0j + 0k
+            return Coquaternion(self.a + other.real, self.b + other.imag, self.c, self.d)
+        elif isinstance(other, Coquaternion):
+            return Coquaternion(self.a + other.a, self.b + other.b, self.c + other.c, self.d + other.d)
+        else:
+            return NotImplemented
+
+    def __radd__(self, other):
+        return self.__add__(other)
+    
+    def __sub__(self, other):
+        if isinstance(other, (int, float)):
+            return Coquaternion(self.a - other, self.b, self.c, self.d)
+        elif isinstance(other, complex):
+            return Coquaternion(self.a - other.real, self.b - other.imag, self.c, self.d)
+        elif isinstance(other, Coquaternion):
+            return Coquaternion(self.a - other.a, self.b - other.b, self.c - other.c, self.d - other.d)
+        else:
+            return NotImplemented
+
+    def __rsub__(self, other):
+        if isinstance(other, (int, float, complex, Coquaternion)):
+            result = self.__sub__(other) # Calcula self - other
+            return result * -1          # Multiplica por -1 para obter other - self
+        else:
+            return NotImplemented
+
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            return Coquaternion(self.a * other, self.b * other, self.c * other, self.d * other)
+        elif isinstance(other, complex):
+            # Trata complexo como x + yi -> Coquaternion(x, y, 0, 0)
+            other_cq = Coquaternion(other.real, other.imag, 0, 0)
+            return self.__mul__(other_cq)
+        elif isinstance(other, Coquaternion):
+            a1, b1, c1, d1 = self.a, self.b, self.c, self.d
+            a2, b2, c2, d2 = other.a, other.b, other.c, other.d
+
+            # Regras de Coquaternião: i*i=-1, j*j=1, k*k=1
+            # ij=k, ji=-k
+            # jk=-i, kj=i
+            # ki=j, ik=-j
+            #res_a = a1*a2 - b1*b2 + c1*c2 + d1*d2
+            #res_b = a1*b2 + b1*a2 - c1*d2 + d1*c2
+            #res_c = a1*c2 + b1*d2 + c1*a2 - d1*b2
+            #res_d = a1*d2 - b1*c2 + c1*b2 + d1*a2
+            res_a = a1*a2 - b1*b2 + c1*c2 + d1*d2
+            res_b = a2*b1 + a1*b2 + c2*d1 - c1*d2
+            res_c = a2*c1 + a1*c2 + b2*d1 - b1*d2
+            res_d = -(b2*c1) + b1*c2 + a2*d1 + a1*d2 # cuidado com o menos aqui
+            return Coquaternion(res_a, res_b, res_c, res_d)
+        else:
+            return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, (int, float)):
+            return self.__mul__(other) # Escalar * self é o mesmo que self * escalar
+        elif isinstance(other, complex):
+            # Complexo * self: (x + yi) * cq
+            other_cq = Coquaternion(other.real, other.imag, 0, 0)
+            # Multiplicação não é comutativa, calculamos other_cq * self
+            return other_cq.__mul__(self)
+        return NotImplemented
+    
+    def conjugate(self):
+        """Conjugado do coquaternião: q* = a - bi - cj - dk"""
+        return Coquaternion(self.a, -self.b, -self.c, -self.d)
+
+
 
 # Função de Parse (Atualizar safe_env)
 def parse_quaternion_expr(expression):
@@ -766,6 +954,11 @@ def parse_quaternion_expr(expression):
     
     # Captura casos onde temos letras como variáveis e constantes (ex: pi, e) seguidas de i,j,k
     expression = re.sub(r'([a-oq-zA-OQ-Z_][a-oq-zA-OQ-Z0-9_]*)([ijk])(?!\w)', r'\1*\2', expression)
+
+    #if re.search(r'(/d+(\.d+)?e[+-]/d+)', expression):
+    #    expression = float(expression.group(0))
+
+    # Se não conseguirmos assim, usar o 10^n.
 
     # Substitui i, j, k isolados (não como parte de nomes tipo 'sin')
     # Usando limites de palavra (\b) para evitar substituições indesejadas
@@ -814,6 +1007,14 @@ def parse_quaternion_expr(expression):
                             (Quaternion(p) if not isinstance(p, Quaternion) else p),
         # Adicionando suporte ao operador negativo unário para Quaternion
         'neg': lambda q: Quaternion(-q.a, -q.b, -q.c, -q.d) if isinstance(q, Quaternion) else -q,
+
+        # Novas funções
+        'absIJK': lambda q: q.vec_norm() if isinstance(q, Quaternion) else 0,
+        'sign': lambda q: q.vec_normalize() if isinstance(q, Quaternion) else Quaternion(0, 0, 0, 0),
+        'pow10': lambda q: q.ten_power() if isinstance(q, Quaternion) else math.pow(10, q),
+        'pow': lambda q, n: q.__pow__(n) if isinstance(q, Quaternion) else math.pow(q, n),
+
+
     }
 
     try:

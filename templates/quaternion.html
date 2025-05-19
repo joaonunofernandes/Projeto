@@ -45,8 +45,8 @@
                         <div class="history-expression">{{ item.expression }}</div>
                         <div class="history-result">= {{ item.result }}</div>
                         <div class="history-actions">
-                            <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression }}', true)">Usar Expressão</button>
-                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result }}', false, '{{ item.original_result|tojson|safe }}')">Usar Resultado</button>
+                            <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression | e }}', true)">Usar Expressão</button>
+                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result | e }}', false, '{{ item.expression | e }}')">Usar Resultado</button>
                         </div>
                     </div>
                     {% endfor %}
@@ -128,7 +128,12 @@
                 <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
                 <button type="submit" class="btn operator submit">=</button>
 
+                <!-- Sexta linha de botões -->
                 <button type="button" class="btn" onclick="appendToDisplay(',')">,</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('**')">q<sup>n</sup></button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('pow10(')">10<sup>x</sup></button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sign(')">sign</button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('absIJK(')">|vec|</button> <!-- Nova linha -->
             </div>
         </form>
     </div>

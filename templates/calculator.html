@@ -55,8 +55,8 @@
                         <div class="history-expression">{{ item.expression }}</div>
                         <div class="history-result">= {{ item.result }}</div>
                         <div class="history-actions">
-                            <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression }}', true)">Usar Expressão</button>
-                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result }}', false, '{{ item.original_result|tojson|safe }}')">Usar Resultado</button>
+                            <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression | e }}', true)">Usar Expressão</button>
+                            <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result | e }}', false, '{{ item.expression | e }}')">Usar Resultado</button>
                         </div>
                     </div>
                     {% endfor %}

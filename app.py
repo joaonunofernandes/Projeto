@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, url_for, session, redirect
 import re
 import numpy as np
@@ -117,51 +118,24 @@ def safe_eval_expr(expression, angle_mode='rad'):
     except Exception as e:
         raise ValueError(f"Erro ao avaliar expressão: {str(e)}")
 
+ 
 def format_result(value):
     """
     Formata o resultado para exibição, processando números complexos
     e reais com formatação apropriada, garantindo que o resultado seja JSON serializável.
-    
-    Returns:
-        tuple: (formatted_value, original_value) onde formatted_value é a string formatada
-               e original_value é o valor original em formato adequado para reutilização
     """
     # Para números complexos
     if isinstance(value, complex):
         # Converter para string formatada
-        formatted = str(value).replace('j', 'i')
-        # Manter o valor original como uma forma serializável
-        original = {'type': 'complex', 'real': value.real, 'imag': value.imag}
-        return formatted, original
+        return str(value).replace('j', 'i')
     
     # Para arrays NumPy ou outros tipos NumPy
     elif isinstance(value, np.ndarray) or isinstance(value, np.number):
-        formatted = str(value)
-        # Converter para lista ou float para serialização
-        if isinstance(value, np.ndarray):
-            original = {'type': 'ndarray', 'value': value.tolist()}
-        else:
-            original = {'type': 'number', 'value': float(value)}
-        return formatted, original
-    
-    # Para quaterniões, usamos a representação em string, mas mantemos os componentes
-    elif hasattr(value, 'a') and hasattr(value, 'b') and hasattr(value, 'c') and hasattr(value, 'd'):
-        formatted = str(value)
-        original = {'type': 'quaternion', 'a': value.a, 'b': value.b, 'c': value.c, 'd': value.d}
-        return formatted, original
+        return str(value)
     
     # Para outros tipos, converter para string
-    else:
-        formatted = str(value)
-        # Tentar converter para float se for número
-        try:
-            original = {'type': 'float', 'value': float(value)}
-        except (ValueError, TypeError):
-            # Se não for possível converter para float, manter como string
-            original = {'type': 'string', 'value': formatted}
-        return formatted, original
+    return str(value)
 
-# Adicionar esta lógica em cada rota para processar o valor original de um resultado do histórico
 @app.route("/", methods=["GET", "POST"])
 def calculatormain():
     # Inicializar histórico se não existir na sessão
@@ -182,44 +156,19 @@ def calculatormain():
         return redirect(url_for('calculatormain'))
         
     result = ""
-    original_result = None
-    
     if request.method == "POST":
         try:
-            # Verificar se estamos usando um resultado original do histórico
-            if 'original_value' in request.form and request.form['original_value']:
-                # Usar o valor original em vez de avaliar a expressão
-                try:
-                    # Tenta converter a string JSON para um dicionário
-                    import json
-                    original_data = json.loads(request.form['original_value'])
-                    
-                    # Reconstruir o valor original
-                    computed = reconstruct_value(original_data)
-                    
-                    # Formatar o resultado para exibição
-                    result, original_result = format_result(computed)
-                    
-                    # Usar a expressão apenas para exibição no histórico
-                    # (o utilizador viu esta expressão como o resultado anterior)
-                    expression = request.form["expression"]
-                except Exception as e:
-                    # Se houver erro ao processar o valor original, volta ao fluxo normal
-                    expression = request.form["expression"]
-                    computed = safe_eval_expr(expression, session['angle_mode'])
-                    result, original_result = format_result(computed)
-            else:
-                # Fluxo normal: obter e avaliar a expressão
-                expression = request.form["expression"]
-                computed = safe_eval_expr(expression, session['angle_mode'])
-                result, original_result = format_result(computed)
+            # Obtém a expressão matemática submetida pelo utilizador através do formulário
+            expression = request.form["expression"]
+            
+            # Avaliar a expressão usando nossa função segura com NumPy
+            computed = safe_eval_expr(expression, session['angle_mode'])
+
+            # Formatar o resultado para exibição
+            result = format_result(computed)
             
             # Adiciona o cálculo ao histórico do utilizador
-            history_entry = {
-                'expression': expression, 
-                'result': result,
-                'original_result': original_result  # Armazenar o valor original
-            }
+            history_entry = {'expression': expression, 'result': result}
             # Insere o novo cálculo no início do histórico para mostrar os mais recentes primeiro
             history = session['history']
             history.insert(0, history_entry)
@@ -239,6 +188,17 @@ def calculatormain():
     # Renderiza o template HTML com os dados preparados
     return render_template("calculator.html", result=result, history=history, angle_mode=angle_mode)
 
+# Rota para alternar entre modos de ângulo (radianos/graus)
+@app.route("/toggle_angle_mode")
+def toggle_angle_mode():
+    # Alterna entre os modos de ângulo: radianos (rad) e graus (deg)
+    if session.get('angle_mode') == 'rad':
+        session['angle_mode'] = 'deg'
+    else:
+        session['angle_mode'] = 'rad'
+    # Redireciona o utilizador de volta à página anterior ou à página inicial
+    return redirect(request.referrer or '/')
+
 @app.route("/quaternions", methods=["GET", "POST"])
 def quaternions():
     # Inicializa o histórico de cálculos de quaterniões se não existir na sessão
@@ -246,43 +206,19 @@ def quaternions():
         session['quaternion_history'] = []
         
     result = ""  # Inicializa a variável de resultado
-    original_result = None
-    
     if request.method == "POST":  # Verifica se o pedido é do tipo POST (submissão de formulário)
         try:
-            # Verificar se estamos usando um resultado original do histórico
-            if 'original_value' in request.form and request.form['original_value']:
-                # Usar o valor original em vez de avaliar a expressão
-                try:
-                    # Tenta converter a string JSON para um dicionário
-                    import json
-                    original_data = json.loads(request.form['original_value'])
-                    
-                    # Reconstruir o valor original
-                    computed = reconstruct_value(original_data)
-                    
-                    # Formatar o resultado para exibição
-                    result, original_result = format_result(computed)
-                    
-                    # Usar a expressão apenas para exibição no histórico
-                    expression = request.form["expression"]
-                except Exception as e:
-                    # Se houver erro ao processar o valor original, volta ao fluxo normal
-                    expression = request.form["expression"]
-                    computed = parse_quaternion_expr(expression)
-                    result, original_result = format_result(computed)
-            else:
-                # Fluxo normal
-                expression = request.form["expression"]
-                computed = parse_quaternion_expr(expression)
-                result, original_result = format_result(computed)
+            # Obtém a expressão matemática submetida pelo utilizador
+            expression = request.form["expression"]
+            
+            # Avalia a expressão usando a função de parse de quaterniões
+            computed = parse_quaternion_expr(expression)
+            
+            # Converte o resultado para string
+            result = str(computed)
             
             # Adiciona o cálculo ao histórico de quaterniões
-            history_entry = {
-                'expression': expression, 
-                'result': result,
-                'original_result': original_result  # Armazenar o valor original
-            }
+            history_entry = {'expression': expression, 'result': result}
             history = session['quaternion_history']
             history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
@@ -305,43 +241,17 @@ def coquaternions():
         session['coquaternion_history'] = []
         
     result = ""  # Inicializa a variável de resultado
-    original_result = None
-    
     if request.method == "POST":  # Verifica se o pedido é do tipo POST (submissão de formulário)
         try:
-            # Verificar se estamos usando um resultado original do histórico
-            if 'original_value' in request.form and request.form['original_value']:
-                # Usar o valor original em vez de avaliar a expressão
-                try:
-                    # Tenta converter a string JSON para um dicionário
-                    import json
-                    original_data = json.loads(request.form['original_value'])
-                    
-                    # Reconstruir o valor original
-                    computed = reconstruct_value(original_data)
-                    
-                    # Formatar o resultado para exibição
-                    result, original_result = format_result(computed)
-                    
-                    # Usar a expressão apenas para exibição no histórico
-                    expression = request.form["expression"]
-                except Exception as e:
-                    # Se houver erro ao processar o valor original, volta ao fluxo normal
-                    expression = request.form["expression"]
-                    computed = eval(expression)
-                    result, original_result = format_result(computed)
-            else:
-                # Fluxo normal
-                expression = request.form["expression"]
-                computed = eval(expression)
-                result, original_result = format_result(computed)
+            # Obtém a expressão matemática submetida pelo utilizador
+            expression = request.form["expression"]
+            # Avalia a expressão diretamente utilizando eval()
+            # Nota: O uso de eval() pode apresentar riscos de segurança em ambiente de produção
+            result = eval(expression)
             
             # Adiciona o cálculo ao histórico de coquaterniões
-            history_entry = {
-                'expression': expression, 
-                'result': result,
-                'original_result': original_result  # Armazenar o valor original
-            }
+            # Cria um registo contendo a expressão e o resultado
+            history_entry = {'expression': expression, 'result': str(result)}
             history = session['coquaternion_history']
             history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
@@ -356,44 +266,6 @@ def coquaternions():
     history = session.get('coquaternion_history', [])
     # Renderiza o template HTML para a calculadora de coquaterniões
     return render_template("coquaternion.html", result=result, history=history)
-
-# Função reconstruct_value para converter o valor original de volta para o formato adequado
-def reconstruct_value(original_value):
-    """
-    Reconstrói o valor original a partir da representação armazenada.
-    
-    Args:
-        original_value: Dicionário com o tipo e valor(es) original(is)
-    
-    Returns:
-        O valor reconstruído no formato apropriado
-    """
-    if not isinstance(original_value, dict) or 'type' not in original_value:
-        # Se não for um dicionário válido, retorna o valor como está
-        return original_value
-    
-    value_type = original_value['type']
-    
-    if value_type == 'complex':
-        return complex(original_value['real'], original_value['imag'])
-    elif value_type == 'ndarray':
-        return np.array(original_value['value'])
-    elif value_type == 'number':
-        return original_value['value']
-    elif value_type == 'quaternion':
-        return Quaternion(
-            original_value['a'],
-            original_value['b'],
-            original_value['c'],
-            original_value['d']
-        )
-    elif value_type == 'float':
-        return original_value['value']
-    elif value_type == 'string':
-        return original_value['value']
-    else:
-        # Tipo desconhecido, retorna o valor como está
-        return original_value
 
 # Rota para limpar o histórico de cálculos
 @app.route("/clear_history/<calculator_type>")
