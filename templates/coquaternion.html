@@ -21,6 +21,7 @@
                     <a href="/coquaternions">Coquaterniões</a>
                 </div>
             </div>
+
         <!-- Botão de histórico -->
         <div class="history-btn">
             <button type="button" class="btn-history" id="historyButton">
@@ -43,6 +44,7 @@
                         <div class="history-actions">
                             <button type="button" class="history-action-btn expr-btn" onclick="useHistoryItem('{{ item.expression | e }}', true)">Usar Expressão</button>
                             <button type="button" class="history-action-btn result-btn" onclick="useHistoryItem('{{ item.result | e }}', false, '{{ item.expression | e }}')">Usar Resultado</button>
+                        </div>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -54,55 +56,80 @@
             </div>
         </div>
         
-    <!-- Cria uma classe que contém os coquaterniões -->
-    <h1>Calculadora de Coquaterniões</h1>
+        <!-- Cria uma classe que contém os coquaterniões -->
+        <h1>Calculadora de Coquaterniões</h1>
         <form method="POST">
-        <!-- Cria um formulário que envia os dados ao servidor quando o utilizador pressiona = -->
-        <input type="text" name="expression" id="display" value="{{ result }}" class="cursor-visible">
-        <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
-        <div class="buttons">
-            <!-- Primeira linha -->
-            <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
-            <button type="button" class="btn special" onclick="backspaceDisplay()">⌫</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
+            <!-- Cria um formulário que envia os dados ao servidor quando o utilizador pressiona = -->
+            <input type="text" name="expression" id="display" value="{{ result }}" class="cursor-visible">
+            <!-- readonly (o utilizador não escreve diretamente aqui, só através de botões) -->
+            <div class="buttons">
+                <!-- Primeira linha de botões -->
+                <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
+                <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('normalize(')">Norm</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sqrt(')">√</button>
+                <button type="button" class="btn operator" onclick="clearDisplay()">AC</button>
+                <button type="button" class="btn operator" onclick="backspaceDisplay()">⌫</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('(')">(</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('divL(')">divL</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('divR(')">divR</button>
+                
+                <!-- Segunda linha de botões (adaptado para quaterniões) -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('asinh(')">asinh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sinh(')">sinh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('asin(')">asin</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sin(')">sin</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('inverse(')"><sup>1</sup>/<sub>q</sub></button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('**2')">x²</button>
+                <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
+                <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
+                <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
+                
+                <!-- Terceira linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('acosh(')">acosh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('cosh(')">cosh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('acos(')">acos</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('cos(')">cos</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('ln(')">ln</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
+                <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
+                <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
+                <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
+                
+                <!-- Quarta linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('atanh(')">atanh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('tanh(')">tanh</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('atan(')">atan</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('tan(')">tan</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('exp(')">exp</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('j')">j</button>
+                <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
+                <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
+                <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
+                <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
+                
+                <!-- Quinta linha de botões -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('real(')">Real</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('vectorial(')">Vec</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('arg(')">Arg</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('conjugate(')">Conj</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('norm(')">|q|</button>
+                <button type="button" class="btn special" onclick="appendToDisplay('k')">k</button>
+                <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
+                <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
+                <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
+                <button type="submit" class="btn operator submit">=</button>
 
-            <!-- Segunda linha -->
-            <button type="button" class="btn" onclick="appendToDisplay('7')">7</button>
-            <button type="button" class="btn" onclick="appendToDisplay('8')">8</button>
-            <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('/')">÷</button>
-
-            <!-- Terceira linha -->
-            <button type="button" class="btn" onclick="appendToDisplay('4')">4</button>
-            <button type="button" class="btn" onclick="appendToDisplay('5')">5</button>
-            <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
-
-            <!-- Quarta linha -->
-            <button type="button" class="btn" onclick="appendToDisplay('1')">1</button>
-            <button type="button" class="btn" onclick="appendToDisplay('2')">2</button>
-            <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
-
-            <!-- Quinta linha -->
-            <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
-            <button type="button" class="btn" onclick="appendToDisplay('0')">0</button>
-            <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
-            <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
-
-            <!-- Sexta linha - Específica para coquaterniões -->
-            <button type="button" class="btn" onclick="appendToDisplay('pi')">π</button>
-            <button type="button" class="btn" onclick="appendToDisplay('.')">.</button>
-            <button type="button" class="btn special" onclick="appendToDisplay('i')">i</button>
-            <button type="button" class="btn special" onclick="appendToDisplay('j')">j</button>
-
-            <!-- Sétima linha - Botões adicionais para coquaterniões -->
-            <button type="button" class="btn special" onclick="appendToDisplay('k')">k</button>
-            <button type="button" class="btn function-math" onclick="appendToDisplay('conjugate(')">Conj</button>
-            <button type="button" class="btn function-math" onclick="appendToDisplay('norm(')">|q|</button>
-            <button type="submit" class="btn operator">=</button>
-        </div>
+                <!-- Sexta linha de botões -->
+                <button type="button" class="btn" onclick="appendToDisplay(',')">,</button>
+                <button type="button" class="btn function-math" onclick="appendToDisplay('**')">q<sup>n</sup></button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('pow10(')">10<sup>x</sup></button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('sign(')">Sign</button> <!-- Nova linha -->
+                <button type="button" class="btn function-math" onclick="appendToDisplay('absIJK(')">|Vec|</button> <!-- Nova linha -->
+            </div>
         </form>
     </div>
 </body>

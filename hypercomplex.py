@@ -892,14 +892,10 @@ class Coquaternion:
             # ij=k, ji=-k
             # jk=-i, kj=i
             # ki=j, ik=-j
-            #res_a = a1*a2 - b1*b2 + c1*c2 + d1*d2
-            #res_b = a1*b2 + b1*a2 - c1*d2 + d1*c2
-            #res_c = a1*c2 + b1*d2 + c1*a2 - d1*b2
-            #res_d = a1*d2 - b1*c2 + c1*b2 + d1*a2
             res_a = a1*a2 - b1*b2 + c1*c2 + d1*d2
             res_b = a2*b1 + a1*b2 + c2*d1 - c1*d2
             res_c = a2*c1 + a1*c2 + b2*d1 - b1*d2
-            res_d = -(b2*c1) + b1*c2 + a2*d1 + a1*d2 # cuidado com o menos aqui
+            res_d = -(b2*c1) + b1*c2 + a2*d1 + a1*d2
             return Coquaternion(res_a, res_b, res_c, res_d)
         else:
             return NotImplemented
