@@ -4,7 +4,7 @@ import re
 import numpy as np
 import os
 import math
-from hypercomplex import Quaternion, parse_quaternion_expr
+from hypercomplex import Quaternion, Coquaternion, parse_quaternion_expr, parse_coquaternion_expr
 
 
 # O sistema de "session" (ver import) do Flask foi projetado especificamente para este propósito: 
@@ -245,13 +245,15 @@ def coquaternions():
         try:
             # Obtém a expressão matemática submetida pelo utilizador
             expression = request.form["expression"]
-            # Avalia a expressão diretamente utilizando eval()
-            # Nota: O uso de eval() pode apresentar riscos de segurança em ambiente de produção
-            result = eval(expression)
+            
+            # ALTERAÇÃO PRINCIPAL: Usar parse_coquaternion_expr em vez de eval()
+            computed = parse_coquaternion_expr(expression)
+            
+            # Converte o resultado para string
+            result = str(computed)
             
             # Adiciona o cálculo ao histórico de coquaterniões
-            # Cria um registo contendo a expressão e o resultado
-            history_entry = {'expression': expression, 'result': str(result)}
+            history_entry = {'expression': expression, 'result': result}
             history = session['coquaternion_history']
             history.insert(0, history_entry)  # Adiciona o novo cálculo no início da lista
             if len(history) > 20:
