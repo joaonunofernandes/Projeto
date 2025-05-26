@@ -286,4 +286,5 @@ if __name__ == "__main__":
     # Executa a aplicação quando o script é executado diretamente
     # O modo debug permite recarregar automaticamente quando há alterações no código
     # Facilita o desenvolvimento pois não é necessário reiniciar manualmente o servidor
-    app.run(debug=True)
+    # Para Docker, usar host='0.0.0.0' para aceitar conexões externas
+    app.run(debug=True, host='0.0.0.0', port=5000)
