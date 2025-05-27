@@ -64,14 +64,14 @@ h1 {
   outline: 2px solid #ff9500;
 }
 
-/* Layout dos botões em grelha */
+/* Layout dos botões */
 .buttons {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(11, 1fr);
   gap: 12px;
 }
 
-/* Estilo base para todos os botões */
+/* Estilo base para botões */
 .btn {
   width: 100%;
   padding: 10px 5px;
@@ -93,12 +93,12 @@ h1 {
   background-color: #444;
 }
 
-/* Ajuste de fonte para funções matemáticas com nomes maiores */
+/* Botões de funções matemáticas com fonte ajustada */
 .btn.function-math {
   font-size: 18px;
 }
 
-/* Botões de operadores matemáticos (+, -, ×, ÷, =) */
+/* Botões de operadores matemáticos */
 .operator {
   background-color: #ff9500;
 }
@@ -111,7 +111,7 @@ h1 {
   background-color: #cc7a00;
 }
 
-/* Botões especiais (números complexos i, constantes) */
+/* Botões especiais (quaterniões i, j, k) */
 .special {
   background-color: #9d4edd;
 }
@@ -124,7 +124,7 @@ h1 {
   background-color: #5a189a;
 }
 
-/* Botões de funções matemáticas (sin, cos, log, etc.) */
+/* Botões de funções matemáticas */
 .function-math {
   background-color: #3a86ff;
   color: white;
@@ -138,7 +138,7 @@ h1 {
   background-color: #1a64d1;
 }
 
-/* Menu suspenso de navegação entre calculadoras */
+/* Menu suspenso de navegação */
 .dropdown {
   position: absolute;
   top: 40px;
@@ -204,7 +204,7 @@ h1 {
   background-color: #e68a00;
 }
 
-/* Botões de navegação do cursor (setas esquerda/direita) */
+/* Botões de navegação do cursor */
 .navigation {
   background-color: #4a6fa5;
 }
@@ -217,7 +217,7 @@ h1 {
   background-color: #2a4a70;
 }
 
-/* Sistema de histórico de cálculos */
+/* Painel de histórico */
 .history-btn {
   position: absolute;
   top: 40px;
@@ -345,7 +345,7 @@ h1 {
   text-align: center;
 }
 
-/* Botões de acção do histórico (usar expressão/resultado) */
+/* Botões de acção do histórico */
 .history-actions {
   display: flex;
   gap: 5px;
@@ -399,7 +399,7 @@ h1 {
   background-color: #777;
 }
 
-/* Estilização personalizada da barra de deslocamento */
+/* Estilização da barra de deslocamento */
 .history-items::-webkit-scrollbar {
   width: 8px;
 }
@@ -419,7 +419,7 @@ h1 {
   background: #777;
 }
 
-/* Botões com tamanhos especiais */
+/* Botões com largura especial */
 .btn.function {
   font-size: 16px;
 }
@@ -432,7 +432,7 @@ h1 {
   grid-row: span 2;
 }
 
-/* Alternador de modo angular (RAD/DEG) */
+/* Alternador de modo angular */
 .angle-mode-toggle {
   position: absolute;
   top: 15px;
@@ -462,7 +462,7 @@ h1 {
   font-weight: bold;
 }
 
-/* Interruptor deslizante do modo angular */
+/* Interruptor do modo angular */
 .switch {
   position: relative;
   display: inline-block;
@@ -515,7 +515,7 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/* Garantir visibilidade do cursor no campo de entrada */
+/* Garantir visibilidade do cursor */
 .cursor-visible {
     caret-color: #ff9500 !important;
     cursor: text !important;

@@ -1,20 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
-<!-- Define a linguagem principal da página como inglês -->
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <!-- Define o conjunto de carateres como UTF-8 para suportar carateres especiais -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Garante que a página é responsiva e se adapta a diferentes tamanhos de ecrã -->
     <title>Calculadora de Reais e Complexos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- Inclui o ficheiro CSS externo para estilizar a página -->
     <script src="{{ url_for('static', filename='calculator.js') }}"></script>
-    <!-- Inclui o ficheiro JavaScript externo para funcionalidades da calculadora -->
 </head>
 <body>
     <div class="calculator">
-        <!-- Menu dropdown para navegação entre diferentes tipos de calculadoras -->
+        <!-- Menu de navegação entre calculadoras -->
         <div class="dropdown" id="mainDropdown">
             <button class="dropbtn" id="dropdownButton">☰ Menu</button>
             <div class="dropdown-content" id="dropdownContent">
@@ -24,7 +19,7 @@
             </div>
         </div>
 
-        <!-- Alternador entre modos de ângulo (RAD e DEG) -->
+        <!-- Alternador de modo angular (radianos/graus) -->
         <div class="angle-mode-toggle">
             <span class="rad-label {% if angle_mode == 'rad' %}active{% endif %}">RAD</span>
             <label class="switch">
@@ -34,21 +29,19 @@
             <span class="deg-label {% if angle_mode == 'deg' %}active{% endif %}">DEG</span>
         </div>
 
-        <!-- Botão para abrir o painel de histórico -->
+        <!-- Painel de histórico de cálculos -->
         <div class="history-btn">
             <button type="button" class="btn-history" id="historyButton">
                 <span>📋</span> Histórico
             </button>
         </div>
         
-        <!-- Painel de histórico de cálculos -->
         <div class="history-panel" id="historyPanel">
             <div class="history-header">
                 <h3>Histórico de Cálculos</h3>
                 <button class="history-close" id="closeHistoryBtn">&times;</button>
             </div>
             <div class="history-items">
-                <!-- Mostra os itens do histórico se existirem -->
                 {% if history %}
                     {% for item in history %}
                     <div class="history-item">
@@ -61,24 +54,23 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Mensagem caso o histórico esteja vazio -->
                     <div class="history-empty">Sem histórico de cálculos</div>
                 {% endif %}
             </div>
             <div class="history-footer">
-                <!-- Link para limpar o histórico -->
                 <a href="{{ url_for('clear_history', calculator_type='standard') }}" class="clear-history">Limpar Histórico</a>
             </div>
         </div>
 
-        <!-- Título da calculadora -->
         <h1>Calculadora de Reais e Complexos</h1>
+        
+        <!-- Formulário principal da calculadora -->
         <form method="POST">
-            <!-- Campo de entrada para mostrar a expressão e o resultado -->
             <input type="text" name="expression" id="display" value="{{ result }}" class="cursor-visible">
-            <!-- readonly impede o utilizador de escrever diretamente no campo -->
+            
+            <!-- Grelha de botões da calculadora -->
             <div class="buttons">
-                <!-- Primeira linha de botões -->
+                <!-- Linha 1: Navegação e controlos básicos -->
                 <button type="button" class="btn navigation" onclick="moveCursorLeft()">←</button>
                 <button type="button" class="btn navigation" onclick="moveCursorRight()">→</button>
                 <button type="button" class="btn" onclick="appendToDisplay('')"></button>
@@ -90,7 +82,7 @@
                 <button type="button" class="btn operator" onclick="appendToDisplay(')')">)</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('/')">/</button>
                 
-                <!-- Segunda linha de botões -->
+                <!-- Linha 2: Funções hiperbólicas e trigonométricas -->
                 <button type="button" class="btn function-math" onclick="appendToDisplay('asinh(')">asinh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('sinh(')">sinh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('asin(')">asin</button>
@@ -102,7 +94,7 @@
                 <button type="button" class="btn" onclick="appendToDisplay('9')">9</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('*')">×</button>
                 
-                <!-- Terceira linha de botões -->
+                <!-- Linha 3: Funções trigonométricas e logarítmicas -->
                 <button type="button" class="btn function-math" onclick="appendToDisplay('acosh(')">acosh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('cosh(')">cosh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('acos(')">acos</button>
@@ -114,7 +106,7 @@
                 <button type="button" class="btn" onclick="appendToDisplay('6')">6</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('-')">-</button>
                 
-                <!-- Quarta linha de botões -->
+                <!-- Linha 4: Funções avançadas -->
                 <button type="button" class="btn function-math" onclick="appendToDisplay('atanh(')">atanh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('tanh(')">tanh</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('atan(')">atan</button>
@@ -126,7 +118,7 @@
                 <button type="button" class="btn" onclick="appendToDisplay('3')">3</button>
                 <button type="button" class="btn operator" onclick="appendToDisplay('+')">+</button>
                 
-                <!-- Quinta linha de botões -->
+                <!-- Linha 5: Funções de números complexos e constantes -->
                 <button type="button" class="btn function-math" onclick="appendToDisplay('real(')">Real</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('imag(')">Imag</button>
                 <button type="button" class="btn function-math" onclick="appendToDisplay('arg(')">Arg</button>
